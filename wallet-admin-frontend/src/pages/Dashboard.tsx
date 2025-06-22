@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Alert, Space, Tag } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Alert, Tag } from 'antd';
 import {
   WalletOutlined,
   RiseOutlined,
@@ -13,7 +13,6 @@ const { Title, Paragraph } = Typography;
 
 // 仪表板页面组件
 const Dashboard: React.FC = () => {
-  const [priceData, setPriceData] = useState<{ price: number; timestamp: number } | null>(null);
   const [tradeCount, setTradeCount] = useState(0);
 
   // 获取钱包配置数据
@@ -84,30 +83,11 @@ const Dashboard: React.FC = () => {
     };
   }, [walletConfigs]);
 
-  // 设置SSE连接监听价格和交易数据
+  // 设置SSE连接监听交易数据
   useEffect(() => {
-    let priceEventSource: EventSource | null = null;
     let tradeEventSource: EventSource | null = null;
 
     try {
-      // 价格流连接
-      priceEventSource = ApiService.createPriceStream();
-      priceEventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          setPriceData({
-            price: data.price || 0,
-            timestamp: Date.now(),
-          });
-        } catch (error) {
-          console.error('解析价格数据失败:', error);
-        }
-      };
-
-      priceEventSource.onerror = (error) => {
-        console.error('价格流连接错误:', error);
-      };
-
       // 交易流连接
       tradeEventSource = ApiService.createTradeStream();
       tradeEventSource.onmessage = () => {
@@ -118,7 +98,7 @@ const Dashboard: React.FC = () => {
         }
       };
 
-      tradeEventSource.onerror = (error) => {
+      tradeEventSource.onerror = (error: any) => {
         console.error('交易流连接错误:', error);
       };
 
@@ -128,9 +108,6 @@ const Dashboard: React.FC = () => {
 
     // 清理函数
     return () => {
-      if (priceEventSource) {
-        priceEventSource.close();
-      }
       if (tradeEventSource) {
         tradeEventSource.close();
       }
@@ -277,26 +254,7 @@ const Dashboard: React.FC = () => {
 
       {/* 实时数据 */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card title="实时价格" extra={<Tag color="blue">实时</Tag>}>
-            {priceData ? (
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Statistic
-                  title="SOL 价格"
-                  value={priceData.price}
-                  prefix="$"
-                  precision={2}
-                />
-                <Typography.Text type="secondary">
-                  更新时间: {new Date(priceData.timestamp).toLocaleTimeString()}
-                </Typography.Text>
-              </Space>
-            ) : (
-              <Typography.Text type="secondary">等待价格数据...</Typography.Text>
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
+        <Col xs={24}>
           <Card title="交易统计" extra={<Tag color="green">实时</Tag>}>
             <Statistic
               title="今日交易次数"
