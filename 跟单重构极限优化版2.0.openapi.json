@@ -1,0 +1,437 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "跟单重构极限优化版2.0",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {
+    "/api/v1/wallets/configurations": {
+      "get": {
+        "summary": "查询所有钱包配置",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW": {
+                      "type": "object",
+                      "properties": {
+                        "wallet_address": {
+                          "type": "string"
+                        },
+                        "is_active": {
+                          "type": "boolean"
+                        },
+                        "follow_percentage": {
+                          "type": "integer"
+                        },
+                        "sol_amount_min": {
+                          "type": "number"
+                        },
+                        "sol_amount_max": {
+                          "type": "integer"
+                        },
+                        "min_price_multiplier": {
+                          "type": "null"
+                        },
+                        "max_price_multiplier": {
+                          "type": "null"
+                        },
+                        "slippage_percentage": {
+                          "type": "integer"
+                        },
+                        "tip_config": {
+                          "type": "null"
+                        },
+                        "priority_fee": {
+                          "type": "integer"
+                        },
+                        "compute_unit_limit": {
+                          "type": "integer"
+                        },
+                        "take_profit_start_pct": {
+                          "type": "integer"
+                        },
+                        "take_profit_step_pct": {
+                          "type": "integer"
+                        },
+                        "take_profit_sell_portion_pct": {
+                          "type": "integer"
+                        },
+                        "stop_loss_percentage": {
+                          "type": "null"
+                        },
+                        "entry_confirmation_secs": {
+                          "type": "null"
+                        },
+                        "dynamic_hold_trigger_pct": {
+                          "type": "null"
+                        },
+                        "dynamic_hold_check_window_secs": {
+                          "type": "null"
+                        },
+                        "dynamic_hold_extend_secs": {
+                          "type": "null"
+                        },
+                        "dynamic_hold_max_secs": {
+                          "type": "null"
+                        },
+                        "hard_stop_loss_pct": {
+                          "type": "integer"
+                        },
+                        "callback_stop_pct": {
+                          "type": "null"
+                        },
+                        "take_profit_percentage_legacy": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "wallet_address",
+                        "is_active",
+                        "follow_percentage",
+                        "sol_amount_min",
+                        "sol_amount_max",
+                        "min_price_multiplier",
+                        "max_price_multiplier",
+                        "slippage_percentage",
+                        "tip_config",
+                        "priority_fee",
+                        "compute_unit_limit",
+                        "take_profit_start_pct",
+                        "take_profit_step_pct",
+                        "take_profit_sell_portion_pct",
+                        "stop_loss_percentage",
+                        "entry_confirmation_secs",
+                        "dynamic_hold_trigger_pct",
+                        "dynamic_hold_check_window_secs",
+                        "dynamic_hold_extend_secs",
+                        "dynamic_hold_max_secs",
+                        "hard_stop_loss_pct",
+                        "callback_stop_pct",
+                        "take_profit_percentage_legacy"
+                      ]
+                    },
+                    "2y7xgFLSNigdc3fYtjC2E7JfL4MsLvS87bBHVWJPb8Qo": {
+                      "type": "object",
+                      "properties": {
+                        "wallet_address": {
+                          "type": "string"
+                        },
+                        "is_active": {
+                          "type": "boolean"
+                        },
+                        "follow_percentage": {
+                          "type": "integer"
+                        },
+                        "sol_amount_min": {
+                          "type": "null"
+                        },
+                        "sol_amount_max": {
+                          "type": "null"
+                        },
+                        "min_price_multiplier": {
+                          "type": "null"
+                        },
+                        "max_price_multiplier": {
+                          "type": "null"
+                        },
+                        "slippage_percentage": {
+                          "type": "integer"
+                        },
+                        "tip_config": {
+                          "type": "null"
+                        },
+                        "priority_fee": {
+                          "type": "integer"
+                        },
+                        "compute_unit_limit": {
+                          "type": "integer"
+                        },
+                        "take_profit_start_pct": {
+                          "type": "integer"
+                        },
+                        "take_profit_step_pct": {
+                          "type": "integer"
+                        },
+                        "take_profit_sell_portion_pct": {
+                          "type": "integer"
+                        },
+                        "stop_loss_percentage": {
+                          "type": "null"
+                        },
+                        "entry_confirmation_secs": {
+                          "type": "integer"
+                        },
+                        "dynamic_hold_trigger_pct": {
+                          "type": "number"
+                        },
+                        "dynamic_hold_check_window_secs": {
+                          "type": "null"
+                        },
+                        "dynamic_hold_extend_secs": {
+                          "type": "integer"
+                        },
+                        "dynamic_hold_max_secs": {
+                          "type": "integer"
+                        },
+                        "hard_stop_loss_pct": {
+                          "type": "integer"
+                        },
+                        "callback_stop_pct": {
+                          "type": "integer"
+                        },
+                        "take_profit_percentage_legacy": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "wallet_address",
+                        "is_active",
+                        "follow_percentage",
+                        "sol_amount_min",
+                        "sol_amount_max",
+                        "min_price_multiplier",
+                        "max_price_multiplier",
+                        "slippage_percentage",
+                        "tip_config",
+                        "priority_fee",
+                        "compute_unit_limit",
+                        "take_profit_start_pct",
+                        "take_profit_step_pct",
+                        "take_profit_sell_portion_pct",
+                        "stop_loss_percentage",
+                        "entry_confirmation_secs",
+                        "dynamic_hold_trigger_pct",
+                        "dynamic_hold_check_window_secs",
+                        "dynamic_hold_extend_secs",
+                        "dynamic_hold_max_secs",
+                        "hard_stop_loss_pct",
+                        "callback_stop_pct",
+                        "take_profit_percentage_legacy"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW",
+                    "2y7xgFLSNigdc3fYtjC2E7JfL4MsLvS87bBHVWJPb8Qo"
+                  ]
+                },
+                "example": {
+                  "5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW": {
+                    "wallet_address": "5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW",
+                    "is_active": true,
+                    "follow_percentage": 75,
+                    "sol_amount_min": 0.5,
+                    "sol_amount_max": 10,
+                    "min_price_multiplier": null,
+                    "max_price_multiplier": null,
+                    "slippage_percentage": 2,
+                    "tip_config": null,
+                    "priority_fee": 100000,
+                    "compute_unit_limit": 200000,
+                    "take_profit_start_pct": 50,
+                    "take_profit_step_pct": 30,
+                    "take_profit_sell_portion_pct": 10,
+                    "stop_loss_percentage": null,
+                    "entry_confirmation_secs": null,
+                    "dynamic_hold_trigger_pct": null,
+                    "dynamic_hold_check_window_secs": null,
+                    "dynamic_hold_extend_secs": null,
+                    "dynamic_hold_max_secs": null,
+                    "hard_stop_loss_pct": 20,
+                    "callback_stop_pct": null,
+                    "take_profit_percentage_legacy": null
+                  },
+                  "2y7xgFLSNigdc3fYtjC2E7JfL4MsLvS87bBHVWJPb8Qo": {
+                    "wallet_address": "2y7xgFLSNigdc3fYtjC2E7JfL4MsLvS87bBHVWJPb8Qo",
+                    "is_active": true,
+                    "follow_percentage": 100,
+                    "sol_amount_min": null,
+                    "sol_amount_max": null,
+                    "min_price_multiplier": null,
+                    "max_price_multiplier": null,
+                    "slippage_percentage": 15,
+                    "tip_config": null,
+                    "priority_fee": 75000,
+                    "compute_unit_limit": 80000,
+                    "take_profit_start_pct": 50,
+                    "take_profit_step_pct": 10,
+                    "take_profit_sell_portion_pct": 20,
+                    "stop_loss_percentage": null,
+                    "entry_confirmation_secs": 10,
+                    "dynamic_hold_trigger_pct": 0.5,
+                    "dynamic_hold_check_window_secs": null,
+                    "dynamic_hold_extend_secs": 5,
+                    "dynamic_hold_max_secs": 180,
+                    "hard_stop_loss_pct": 20,
+                    "callback_stop_pct": 90,
+                    "take_profit_percentage_legacy": null
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "post": {
+        "summary": "暂停/开启钱包跟单",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": "{\r\n  \"wallet_address\": \"5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW\",\r\n  \"is_active\": false,  // ---这个关闭就是暂停钱包跟单\r\n  // --- 其他所有配置字段保持原样 ---\r\n  \"follow_percentage\": 75.0,\r\n  \"sol_amount_min\": 0.5,\r\n  \"sol_amount_max\": 20.0,\r\n  \"slippage_percentage\": 1.5,\r\n  \"priority_fee\": 100000,\r\n  \"compute_unit_limit\": 200000\r\n  // ...等等\r\n}"
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": "配置更新请求已接受"
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/wallets/configurations/5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW": {
+      "delete": {
+        "summary": "删除钱包配置",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": "配置删除请求已接受"
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/prices/stream": {
+      "get": {
+        "summary": "sse流推送价格",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/trades/stream": {
+      "get": {
+        "summary": "交易记录实时推送",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/logs": {
+      "get": {
+        "summary": "日志查看接口",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "app.log.2025-06-22": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "app.log.2025-06-22"
+                  ]
+                },
+                "example": {
+                  "app.log.2025-06-22": "2025-06-22T12:02:42.5847788+08:00  INFO newcopy_v2: 生产模式日志记录器已初始化，异步写入到 'logs' 目录。\r\n2025-06-22T12:02:42.5849561+08:00  INFO newcopy_v2: 您可以通过设置 RUST_LOG=debug 或 RUST_LOG=trace 来查看更详细的日志\r\n2025-06-22T12:02:42.5857127+08:00  INFO newcopy_v2: 全局加速器配置已初始化。启用状态: true\r\n2025-06-22T12:02:42.5857553+08:00  INFO newcopy_v2: 配置文件加载成功.\r\n2025-06-22T12:02:42.5857658+08:00  INFO newcopy_v2: 正在初始化程序...\r\n2025-06-22T12:02:42.5857694+08:00  INFO newcopy_v2: 正在初始化区块哈希服务...\r\n2025-06-22T12:02:42.58582+08:00  INFO newcopy_v2: 区块哈希服务已在后台任务中启动。\r\n2025-06-22T12:02:42.5858442+08:00  INFO newcopy_v2: 正在等待区块哈希服务预热，最长等待30秒...\r\n2025-06-22T12:02:42.5860175+08:00  INFO newcopy_v2::blockhash_service: 开始新的gRPC订阅循环...\r\n2025-06-22T12:02:42.5860448+08:00  INFO newcopy_v2::blockhash_service: 尝试连接到gRPC端点: solana-yellowstone-grpc.publicnode.com:443\r\n2025-06-22T12:02:42.5930618+08:00  INFO newcopy_v2::blockhash_service: 成功连接到gRPC端点: solana-yellowstone-grpc.publicnode.com:443\r\n2025-06-22T12:02:53.7601904+08:00  INFO newcopy_v2: ✅ 区块哈希服务已成功预热！\r\n2025-06-22T12:02:53.7617693+08:00  INFO newcopy_v2: 筛选器初始配置加载完成: FilterConfig { allowed_creators: {}, block_list_mint: {}, min_price: 0.0, max_price: 0.0, wallet_configs: {\"BmgqUZkxWk78jkMmpbjNN1UBMX2f8GGx2grCqtee8cwM\": WalletConfig { wallet_address: \"BmgqUZkxWk78jkMmpbjNN1UBMX2f8GGx2grCqtee8cwM\", is_active: true, follow_percentage: Some(100.0), sol_amount_min: Some(5e-8), sol_amount_max: Some(10.0), min_price_multiplier: None, max_price_multiplier: None, slippage_percentage: 15.0, priority_fee: 150000, compute_unit_limit: 80000, take_profit_start_pct: None, take_profit_step_pct: None, take_profit_sell_portion_pct: None, take_profit_strategy: Some(\"exponential\"), trailing_stop_profit_percentage: None, exponential_sell_trigger_step_pct: Some(10.0), exponential_sell_base_portion_pct: Some(5.0), exponential_sell_power: Some(2.0), stop_loss_percentage: None, entry_confirmation_secs: Some(10), dynamic_hold_trigger_pct: Some(0.5), dynamic_hold_check_window_secs: None, dynamic_hold_extend_secs: Some(5), dynamic_hold_max_secs: Some(20), hard_stop_loss_pct: Some(20.0), callback_stop_pct: Some(20.0), accelerator_tip_percentage: Some(1.0), take_profit_percentage_legacy: None }} }\r\n2025-06-22T12:02:53.7619874+08:00  INFO newcopy_v2: 钱包已加载, 公钥: 5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW\r\n2025-06-22T12:02:53.7626885+08:00  INFO newcopy_v2::services::transaction_sender: 🚀 加速器已启用，使用 Flashblock 后端。\r\n2025-06-22T12:02:53.7627986+08:00  INFO newcopy_v2::services::sol_price_oracle: SOL价格预言机服务已启动，每 5 秒更新一次。\r\n2025-06-22T12:02:54.2308512+08:00  INFO newcopy_v2::services::sol_price_oracle: SOL美元价格预言机已就绪，首次价格: $134.85\r\n2025-06-22T12:02:54.2309458+08:00  INFO newcopy_v2: 价格广播桥接任务已启动。\r\n2025-06-22T12:02:54.2312951+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 正在初始化Redis订阅器，URL: redis://127.0.0.1:6379\r\n2025-06-22T12:02:54.2313192+08:00  INFO newcopy_v2::services::trade_logger: 交易历史记录器服务已启动，将记录到 trade_history.jsonl\r\n2025-06-22T12:02:54.2313273+08:00  INFO newcopy_v2::services::transaction_tracker: 交易跟踪服务已启动。\r\n2025-06-22T12:02:54.2319866+08:00  INFO newcopy_v2::hotpath::redis_subscriber: Redis连接成功\r\n2025-06-22T12:02:54.2320526+08:00  INFO newcopy_v2: 所有服务已在后台启动。程序正在运行...\r\n2025-06-22T12:02:54.2320633+08:00  INFO newcopy_v2: 按 CTRL+C 优雅退出。\r\n2025-06-22T12:02:54.2320787+08:00  INFO newcopy_v2: 启动筛选器配置更新监听器，订阅频道: filter_update_channel\r\n2025-06-22T12:02:54.2325489+08:00  INFO newcopy_v2::services::api_server: API服务器正在监听 http://127.0.0.1:8080\r\n2025-06-22T12:02:54.2328454+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 已成功订阅Redis频道: trades_channel\r\n2025-06-22T12:02:54.423193+08:00  INFO newcopy_v2::services::transaction_sender: ✅ RPC连接预热成功，已完成TLS握手\r\n2025-06-22T12:03:12.8981592+08:00  WARN newcopy_v2::services::transaction_tracker: 收到一个未跟踪或已超时的交易确认签名: 5jJvAXZzQANtGDt4CdwKDHe6mBcSomY2N83zYY8vRJA52brXDCeWUFMm75ayNSsPttzgDajbXgTBxKBv5LsbQJ4y\r\n2025-06-22T12:03:22.4390359+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 12:03:22.438 收到买入交易 (原始: \u001b[36m0.00099\u001b[0m SOL / \u001b[36m12929\u001b[0m Tokens, 来自钱包: \u001b[33mBmgqUZ...8cwM\u001b[0m, 签名: \u001b[34m5Tz4tiHB5Qc9Nz51Jtcra6v5v21zH1ypQJFj4fBma6d7dn2mMiZ2RTaLCoBArZh2ENTWL8vKecawNTNk7WMjnv1t\u001b[0m)\r\n2025-06-22T12:03:22.4393768+08:00  WARN newcopy_v2::hotpath::redis_subscriber: 计算结果: 购买 \u001b[32m0.00099\u001b[0m, 最低接收 \u001b[32m10988\u001b[0m | 延迟: 1.1347ms (筛选: 200ns, 计算: 200ns, 构建: 73.3µs, 构建→发送: 400ns)\r\n2025-06-22T12:03:23.1351501+08:00  INFO newcopy_v2::services::senders::flashblock_sender: ⚡️ 交易已通过 Flashblock 加速器提交: 3L3KSpsSNaX2DLQ66VBBZXmMZqDwvJ9PYQW7KPCEC4TKFGuJaFCKabWZJyc1QJKRvLmxmuzeBrTVNECq3NqBmjZf\r\n2025-06-22T12:03:23.1352245+08:00  INFO newcopy_v2::hotpath::redis_subscriber: ✅ 已提交交易，签名: \u001b[34m3L3KSpsSNaX2DLQ66VBBZXmMZqDwvJ9PYQW7KPCEC4TKFGuJaFCKabWZJyc1QJKRvLmxmuzeBrTVNECq3NqBmjZf\u001b[0m | 状态: \u001b[32m成功\u001b[0m | 耗时: 695.8524ms\r\n2025-06-22T12:03:23.9081042+08:00  INFO newcopy_v2::services::transaction_tracker: 交易已通过Redis确认: 3L3KSpsSNaX2DLQ66VBBZXmMZqDwvJ9PYQW7KPCEC4TKFGuJaFCKabWZJyc1QJKRvLmxmuzeBrTVNECq3NqBmjZf\r\n2025-06-22T12:03:23.9081508+08:00  INFO newcopy_v2::services::transaction_tracker: [Trade: 2f22a97b-9474-4591-bde2-fa3903bd7121] 链上确认买入成功，真实收到: 10988000000 raw tokens\r\n2025-06-22T12:03:23.908192+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 创建新的生命周期 Actor，买入价: 0.00000007658228774581685, 数量: 10988000000, 初始持仓 10 秒\r\n2025-06-22T12:03:23.9082316+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] Actor 已启动，开始监控... (已知撤销次数: 0)\r\n2025-06-22T12:03:25.1254357+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+6.01%), 倒计时延长至 13.78秒。\r\n2025-06-22T12:03:25.8150281+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 观察到卖出: \u001b[31m12929.259955 tokens\u001b[0m, 获得 \u001b[31m0.001050 SOL\u001b[0m (来自跟踪的钱包: BmgqUZkxWk78jkMmpbjNN1UBMX2f8GGx2grCqtee8cwM, 签名: 44Fat3TnegabxpMd5vN2K8UB5vBBoicXbh1KqWdLWQ5w4wmw1sPe7nkTV4a9FutapLCgKusehVKKchjsLhoaEYBB)\r\n2025-06-22T12:03:25.8150906+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+6.01%), 倒计时延长至 18.09秒。\r\n2025-06-22T12:03:29.8891087+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+2.04%), 倒计时延长至 19.02秒。\r\n2025-06-22T12:03:35.834006+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 跌幅满足条件 (-3.64%), 倒计时延长至 18.07秒。\r\n2025-06-22T12:03:37.8731892+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 跌幅满足条件 (-7.08%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:03:44.6953028+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 跌幅满足条件 (-7.04%), 倒计时延长至 18.18秒。\r\n2025-06-22T12:03:46.3732839+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 跌幅满足条件 (-1.24%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:03:47.4866234+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 跌幅满足条件 (-1.17%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:03:52.1443527+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+2.66%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:03:57.8132003+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+2.78%), 倒计时延长至 19.33秒。\r\n2025-06-22T12:03:59.6163786+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+2.51%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:04:00.7201419+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 涨幅满足条件 (+2.51%), 倒计时延长至 20.00秒。\r\n2025-06-22T12:04:00.720159+08:00  INFO newcopy_v2::services::transaction_tracker: 检测到外部卖出交易，撤销计数器将增加: GKLgKkjAVMH5gUTnARA3gKYhx7L46SsSgRGZmGyapump\r\n2025-06-22T12:04:00.7202059+08:00  WARN newcopy_v2::services::transaction_tracker: 收到一个未跟踪或已超时的交易确认签名: 3SpMfWj6MQMocrXcmEch7GAcXnqcJnfwbuabnPTRKnBYXjHkBJ9Aih9GzTSyc51RsdPFUiPwHCBqjzuHMEPapaus\r\n2025-06-22T12:04:00.7202082+08:00  INFO newcopy_v2::services::trade_lifecycle_actor: [Trade: f1ed41b3-a8d0-4c0e-85e2-8f55eb6bf061] 检测到新的外部平仓事件 (当前: 1, 已知: 0)，策略终止。\r\n2025-06-22T12:45:26.9125543+08:00  INFO newcopy_v2: 生产模式日志记录器已初始化，异步写入到 'logs' 目录。\n2025-06-22T12:45:26.9127821+08:00  INFO newcopy_v2: 您可以通过设置 RUST_LOG=debug 或 RUST_LOG=trace 来查看更详细的日志\n2025-06-22T12:45:26.9136282+08:00  INFO newcopy_v2: 全局加速器配置已初始化。启用状态: true\n2025-06-22T12:45:26.9136608+08:00  INFO newcopy_v2: 配置文件加载成功.\n2025-06-22T12:45:26.9136655+08:00  INFO newcopy_v2: 正在初始化程序...\n2025-06-22T12:45:26.9136683+08:00  INFO newcopy_v2: 正在初始化区块哈希服务...\n2025-06-22T12:45:26.9137449+08:00  INFO newcopy_v2: 区块哈希服务已在后台任务中启动。\n2025-06-22T12:45:26.9137502+08:00  INFO newcopy_v2: 正在等待区块哈希服务预热，最长等待30秒...\n2025-06-22T12:45:26.9139451+08:00  INFO newcopy_v2::blockhash_service: 开始新的gRPC订阅循环...\n2025-06-22T12:45:26.9139838+08:00  INFO newcopy_v2::blockhash_service: 尝试连接到gRPC端点: solana-yellowstone-grpc.publicnode.com:443\n2025-06-22T12:45:26.921741+08:00  INFO newcopy_v2::blockhash_service: 成功连接到gRPC端点: solana-yellowstone-grpc.publicnode.com:443\n2025-06-22T12:45:38.7700185+08:00  INFO newcopy_v2: ✅ 区块哈希服务已成功预热！\n2025-06-22T12:45:38.7715087+08:00  INFO newcopy_v2: 筛选器初始配置加载完成: FilterConfig { allowed_creators: {}, block_list_mint: {}, min_price: 0.0, max_price: 0.0, wallet_configs: {\"BmgqUZkxWk78jkMmpbjNN1UBMX2f8GGx2grCqtee8cwM\": WalletConfig { wallet_address: \"BmgqUZkxWk78jkMmpbjNN1UBMX2f8GGx2grCqtee8cwM\", is_active: true, follow_percentage: Some(100.0), sol_amount_min: Some(5e-8), sol_amount_max: Some(10.0), min_price_multiplier: None, max_price_multiplier: None, slippage_percentage: 15.0, priority_fee: 150000, compute_unit_limit: 80000, take_profit_start_pct: None, take_profit_step_pct: None, take_profit_sell_portion_pct: None, take_profit_strategy: Some(\"exponential\"), trailing_stop_profit_percentage: None, exponential_sell_trigger_step_pct: Some(10.0), exponential_sell_base_portion_pct: Some(5.0), exponential_sell_power: Some(2.0), stop_loss_percentage: None, entry_confirmation_secs: Some(10), dynamic_hold_trigger_pct: Some(0.5), dynamic_hold_check_window_secs: None, dynamic_hold_extend_secs: Some(5), dynamic_hold_max_secs: Some(20), hard_stop_loss_pct: Some(20.0), callback_stop_pct: Some(20.0), accelerator_tip_percentage: Some(1.0), take_profit_percentage_legacy: None }} }\n2025-06-22T12:45:38.7716899+08:00  INFO newcopy_v2: 钱包已加载, 公钥: 5b9bxdatmP8uzKhcFb2yabJqhqMynFx9S2VsJRJ6EyvW\n2025-06-22T12:45:38.7726172+08:00  INFO newcopy_v2::services::transaction_sender: 🚀 加速器已启用，使用 Flashblock 后端。\n2025-06-22T12:45:38.7726991+08:00  INFO newcopy_v2::services::sol_price_oracle: SOL价格预言机服务已启动，每 5 秒更新一次。\n2025-06-22T12:45:39.8896579+08:00  INFO newcopy_v2::services::transaction_sender: ✅ RPC连接预热成功，已完成TLS握手\n2025-06-22T12:45:39.9048531+08:00  INFO newcopy_v2::services::sol_price_oracle: SOL美元价格预言机已就绪，首次价格: $135.6\n2025-06-22T12:45:39.9049663+08:00  INFO newcopy_v2: 价格广播桥接任务已启动。\n2025-06-22T12:45:39.9052507+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 正在初始化Redis订阅器，URL: redis://127.0.0.1:6379\n2025-06-22T12:45:39.9052959+08:00  INFO newcopy_v2::services::transaction_tracker: 交易跟踪服务已启动。\n2025-06-22T12:45:39.9053019+08:00  INFO newcopy_v2::services::trade_logger: 交易历史记录器服务已启动，将记录到 trade_history.jsonl\n2025-06-22T12:45:39.90601+08:00  INFO newcopy_v2::hotpath::redis_subscriber: Redis连接成功\n2025-06-22T12:45:39.9060625+08:00  INFO newcopy_v2: 所有服务已在后台启动。程序正在运行...\n2025-06-22T12:45:39.9060692+08:00  INFO newcopy_v2: 按 CTRL+C 优雅退出。\n2025-06-22T12:45:39.9061444+08:00  INFO newcopy_v2: 启动筛选器配置更新监听器，订阅频道: filter_update_channel\n2025-06-22T12:45:39.9065354+08:00  INFO newcopy_v2::services::api_server: API服务器正在监听 http://127.0.0.1:8080\n2025-06-22T12:45:39.9068504+08:00  INFO newcopy_v2::hotpath::redis_subscriber: 已成功订阅Redis频道: trades_channel\n2025-06-22T12:48:26.7967678+08:00  INFO newcopy_v2::services::api_server: 收到获取所有日志内容的API请求\n"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {}
+  },
+  "servers": [],
+  "security": []
+}
