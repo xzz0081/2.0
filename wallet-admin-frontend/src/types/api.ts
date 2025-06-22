@@ -15,6 +15,10 @@ export interface WalletConfig {
   sol_amount_min?: number | null; // [可选] 购买金额的SOL绝对值下限
   sol_amount_max?: number | null; // [可选] 购买金额的SOL绝对值上限
 
+  // 价格筛选控制 (新增功能) - 内部存储为multiplier，界面显示为USD
+  min_price_multiplier?: number | null; // [可选] 最低价格筛选倍数（内部存储）
+  max_price_multiplier?: number | null; // [可选] 最高价格筛选倍数（内部存储）
+
   // 核心止盈策略选择
   take_profit_strategy?: string | null; // [重要] 止盈策略类型: "standard" | "trailing" | "exponential"
 
@@ -44,8 +48,6 @@ export interface WalletConfig {
   // 已废弃或暂不使用的字段
   dynamic_hold_check_window_secs?: number | null; // (暂未使用)
   stop_loss_percentage?: number | null; // (已废弃)
-  min_price_multiplier?: number | null; // (暂未使用)
-  max_price_multiplier?: number | null; // (暂未使用)
   take_profit_percentage_legacy?: number | null; // (已废弃)
   tip_config?: any | null; // (兼容旧版本)
 }

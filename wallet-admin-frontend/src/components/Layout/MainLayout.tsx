@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSolPrice } from '../../hooks/useSolPrice';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -25,6 +26,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 获取实时SOL价格
+  const { solPrice } = useSolPrice();
 
   // 菜单项配置
   const menuItems = [
@@ -112,7 +116,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0'
         }}>
-          {/* 折叠按钮 */}
+          {/* 左侧：折叠按钮 */}
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -124,23 +128,37 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             }}
           />
 
-          {/* 用户信息区域 */}
-          <Space>
-            <Text type="secondary">欢迎回来，</Text>
-            <Dropdown
-              menu={{ items: userMenuItems }}
-              placement="bottomRight"
-              arrow
-            >
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar 
-                  size="small" 
-                  icon={<UserOutlined />} 
-                  style={{ backgroundColor: '#1890ff' }}
-                />
-                <Text strong>{user?.username}</Text>
-              </Space>
-            </Dropdown>
+          {/* 右侧：SOL价格和用户信息区域 */}
+          <Space size="large">
+            {/* SOL价格显示 */}
+            <div style={{
+              color: '#ff4d4f',
+              fontFamily: 'monospace',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}>
+              SOL: ${solPrice.toFixed(2)}
+            </div>
+
+            {/* 用户信息 */}
+            <Space>
+              <Text type="secondary">欢迎回来，</Text>
+              <Dropdown
+                menu={{ items: userMenuItems }}
+                placement="bottomRight"
+                arrow
+              >
+                <Space style={{ cursor: 'pointer' }}>
+                  <Avatar
+                    size="small"
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: '#1890ff' }}
+                  />
+                  <Text strong>{user?.username}</Text>
+                </Space>
+              </Dropdown>
+            </Space>
           </Space>
         </Header>
 

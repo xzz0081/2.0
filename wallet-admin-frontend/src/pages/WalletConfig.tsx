@@ -14,6 +14,7 @@ import {
   Select,
   Row,
   Col,
+  Alert,
   message,
   Popconfirm,
   Tooltip
@@ -27,6 +28,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ApiService from '../services/api';
 import type { WalletConfig, WalletConfigsResponse } from '../types';
+import { useSolPrice } from '../hooks/useSolPrice';
+import { formatPrice, usdToPriceMultiplier, priceMultiplierToUsd } from '../utils/priceUtils';
 
 const { Title } = Typography;
 
@@ -38,6 +41,9 @@ const WalletConfigPage: React.FC = () => {
   const [form] = Form.useForm();
   const [addForm] = Form.useForm();
   const queryClient = useQueryClient();
+
+  // 获取实时SOL价格用于转换
+  const { solPrice } = useSolPrice();
 
   // 获取钱包配置数据
   const { data: walletConfigs, isLoading, refetch } = useQuery<WalletConfigsResponse>({
@@ -81,7 +87,15 @@ const WalletConfigPage: React.FC = () => {
   // 处理编辑
   const handleEdit = (wallet: WalletConfig) => {
     setEditingWallet(wallet);
-    form.setFieldsValue(wallet);
+
+    // 转换价格multiplier为美元价格显示
+    const formValues = {
+      ...wallet,
+      min_price_usd: wallet.min_price_multiplier ? priceMultiplierToUsd(wallet.min_price_multiplier, solPrice) : undefined,
+      max_price_usd: wallet.max_price_multiplier ? priceMultiplierToUsd(wallet.max_price_multiplier, solPrice) : undefined,
+    };
+
+    form.setFieldsValue(formValues);
     setEditModalVisible(true);
   };
 
@@ -94,10 +108,17 @@ const WalletConfigPage: React.FC = () => {
   const handleFormSubmit = async (values: any) => {
     if (!editingWallet) return;
 
+    // 转换美元价格为multiplier
     const updatedConfig: WalletConfig = {
       ...editingWallet,
       ...values,
+      min_price_multiplier: values.min_price_usd ? usdToPriceMultiplier(values.min_price_usd, solPrice) : null,
+      max_price_multiplier: values.max_price_usd ? usdToPriceMultiplier(values.max_price_usd, solPrice) : null,
     };
+
+    // 移除临时的USD字段
+    delete (updatedConfig as any).min_price_usd;
+    delete (updatedConfig as any).max_price_usd;
 
     updateMutation.mutate(updatedConfig);
   };
@@ -111,7 +132,14 @@ const WalletConfigPage: React.FC = () => {
       priority_fee: values.priority_fee,
       compute_unit_limit: values.compute_unit_limit,
       ...values,
+      // 转换美元价格为multiplier
+      min_price_multiplier: values.min_price_usd ? usdToPriceMultiplier(values.min_price_usd, solPrice) : null,
+      max_price_multiplier: values.max_price_usd ? usdToPriceMultiplier(values.max_price_usd, solPrice) : null,
     };
+
+    // 移除临时的USD字段
+    delete (newConfig as any).min_price_usd;
+    delete (newConfig as any).max_price_usd;
 
     updateMutation.mutate(newConfig);
     setAddModalVisible(false);
@@ -173,6 +201,34 @@ const WalletConfigPage: React.FC = () => {
           </Typography.Text>
         </Space>
       ),
+    },
+    {
+      title: '价格筛选',
+      key: 'price_filter',
+      width: 150,
+      render: (_: any, record: WalletConfig) => {
+        const hasMinPrice = record.min_price_multiplier !== null && record.min_price_multiplier !== undefined;
+        const hasMaxPrice = record.max_price_multiplier !== null && record.max_price_multiplier !== undefined;
+
+        if (!hasMinPrice && !hasMaxPrice) {
+          return <Tag color="default">无限制</Tag>;
+        }
+
+        return (
+          <Space direction="vertical" size="small">
+            {hasMinPrice && (
+              <Typography.Text type="secondary">
+                最低: {formatPrice(priceMultiplierToUsd(record.min_price_multiplier!, solPrice))}
+              </Typography.Text>
+            )}
+            {hasMaxPrice && (
+              <Typography.Text type="secondary">
+                最高: {formatPrice(priceMultiplierToUsd(record.max_price_multiplier!, solPrice))}
+              </Typography.Text>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: '止盈策略',
@@ -416,6 +472,47 @@ const WalletConfigPage: React.FC = () => {
             </Col>
           </Row>
 
+          {/* 价格筛选控制 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>价格筛选控制</Typography.Title>
+          <Alert
+            message={`当前SOL价格: ${formatPrice(solPrice)}`}
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="min_price_usd"
+                label="最低价格筛选 (美元)"
+                tooltip="只跟单价格 >= 此值的代币。设为空表示不限制最低价格"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.0001}
+                  style={{ width: '100%' }}
+                  placeholder="例如: $0.0001"
+                  addonBefore="$"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="max_price_usd"
+                label="最高价格筛选 (美元)"
+                tooltip="只跟单价格 <= 此值的代币。设为空表示不限制最高价格"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.001}
+                  style={{ width: '100%' }}
+                  placeholder="例如: $0.01"
+                  addonBefore="$"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
           {/* 止盈策略配置 */}
           <Typography.Title level={5} style={{ marginTop: 16 }}>止盈策略配置</Typography.Title>
           <Form.Item
@@ -626,6 +723,8 @@ const WalletConfigPage: React.FC = () => {
             exponential_sell_power: 2.0,
             follow_percentage: 100.0,
             accelerator_tip_percentage: 1.0,
+            min_price_usd: 0.0001,
+            max_price_usd: 0.01,
           }}
         >
           <Form.Item
@@ -676,6 +775,39 @@ const WalletConfigPage: React.FC = () => {
                 rules={[{ required: true, message: '请输入计算单元限制' }]}
               >
                 <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="min_price_usd"
+                label="最低价格筛选 (美元)"
+                tooltip="只跟单价格 >= 此值的代币"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.0001}
+                  style={{ width: '100%' }}
+                  placeholder="$0.0001"
+                  addonBefore="$"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="max_price_usd"
+                label="最高价格筛选 (美元)"
+                tooltip="只跟单价格 <= 此值的代币"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.001}
+                  style={{ width: '100%' }}
+                  placeholder="$0.01"
+                  addonBefore="$"
+                />
               </Form.Item>
             </Col>
           </Row>

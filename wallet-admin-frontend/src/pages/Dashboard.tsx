@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Typography, Alert, Space, Tag } from 'antd';
 import {
   WalletOutlined,
-  DollarOutlined,
   RiseOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
@@ -33,6 +32,7 @@ const Dashboard: React.FC = () => {
         totalSolAmount: 0,
         avgFollowPercentage: 0,
         strategyCounts: {},
+        priceFilterStats: { withFilter: 0, withoutFilter: 0, bothLimits: 0, minOnly: 0, maxOnly: 0 },
       };
     }
 
@@ -52,12 +52,35 @@ const Dashboard: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
 
+    // 统计价格筛选使用情况
+    const priceFilterStats = wallets.reduce((acc, w) => {
+      const hasMinPrice = w.min_price_multiplier !== null && w.min_price_multiplier !== undefined;
+      const hasMaxPrice = w.max_price_multiplier !== null && w.max_price_multiplier !== undefined;
+
+      if (hasMinPrice || hasMaxPrice) {
+        acc.withFilter++;
+      } else {
+        acc.withoutFilter++;
+      }
+
+      if (hasMinPrice && hasMaxPrice) {
+        acc.bothLimits++;
+      } else if (hasMinPrice) {
+        acc.minOnly++;
+      } else if (hasMaxPrice) {
+        acc.maxOnly++;
+      }
+
+      return acc;
+    }, { withFilter: 0, withoutFilter: 0, bothLimits: 0, minOnly: 0, maxOnly: 0 });
+
     return {
       totalWallets: wallets.length,
       activeWallets: activeWallets.length,
       totalSolAmount,
       avgFollowPercentage,
       strategyCounts,
+      priceFilterStats,
     };
   }, [walletConfigs]);
 
@@ -134,7 +157,7 @@ const Dashboard: React.FC = () => {
 
       {/* 统计卡片 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="钱包总数"
@@ -144,7 +167,7 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="活跃钱包"
@@ -159,19 +182,7 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="总投资额度"
-              value={stats.totalSolAmount}
-              prefix={<DollarOutlined />}
-              suffix="SOL"
-              precision={2}
-              loading={isLoading}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="平均跟单比例"
@@ -187,7 +198,7 @@ const Dashboard: React.FC = () => {
 
       {/* 策略分布 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24}>
+        <Col xs={24} lg={12}>
           <Card title="策略分布统计">
             <Row gutter={16}>
               {Object.entries(stats.strategyCounts).map(([strategy, count]) => {
@@ -200,7 +211,7 @@ const Dashboard: React.FC = () => {
                 const config = strategyMap[strategy as keyof typeof strategyMap] || { text: strategy, color: 'default' };
 
                 return (
-                  <Col xs={12} sm={8} md={6} key={strategy}>
+                  <Col xs={12} sm={12} md={12} key={strategy}>
                     <Card size="small">
                       <Statistic
                         title={<Tag color={config.color}>{config.text}</Tag>}
@@ -211,6 +222,54 @@ const Dashboard: React.FC = () => {
                   </Col>
                 );
               })}
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="价格筛选统计">
+            <Row gutter={16}>
+              <Col xs={12} sm={12} md={12}>
+                <Card size="small">
+                  <Statistic
+                    title={<Tag color="green">启用筛选</Tag>}
+                    value={stats.priceFilterStats.withFilter}
+                    suffix="个钱包"
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} sm={12} md={12}>
+                <Card size="small">
+                  <Statistic
+                    title={<Tag color="default">无筛选</Tag>}
+                    value={stats.priceFilterStats.withoutFilter}
+                    suffix="个钱包"
+                  />
+                </Card>
+              </Col>
+              <Col xs={8} sm={8} md={8}>
+                <Card size="small">
+                  <Statistic
+                    title={<Tag color="blue" style={{ fontSize: '10px' }}>双限制</Tag>}
+                    value={stats.priceFilterStats.bothLimits}
+                  />
+                </Card>
+              </Col>
+              <Col xs={8} sm={8} md={8}>
+                <Card size="small">
+                  <Statistic
+                    title={<Tag color="cyan" style={{ fontSize: '10px' }}>仅最低</Tag>}
+                    value={stats.priceFilterStats.minOnly}
+                  />
+                </Card>
+              </Col>
+              <Col xs={8} sm={8} md={8}>
+                <Card size="small">
+                  <Statistic
+                    title={<Tag color="purple" style={{ fontSize: '10px' }}>仅最高</Tag>}
+                    value={stats.priceFilterStats.maxOnly}
+                  />
+                </Card>
+              </Col>
             </Row>
           </Card>
         </Col>

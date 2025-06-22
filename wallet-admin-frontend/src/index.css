@@ -56,6 +56,31 @@ html, body {
   align-items: center;
 }
 
+/* SOL价格显示样式 */
+.sol-price-display {
+  color: #ff4d4f !important;
+  font-family: 'Courier New', monospace !important;
+  font-weight: bold !important;
+  font-size: 18px !important;
+  transition: all 0.3s ease !important;
+}
+
+/* 价格更新动画 */
+.price-update-flash {
+  animation: priceFlash 0.5s ease-in-out;
+}
+
+@keyframes priceFlash {
+  0% { background-color: rgba(255, 77, 79, 0.1); }
+  50% { background-color: rgba(255, 77, 79, 0.2); }
+  100% { background-color: transparent; }
+}
+
+/* 平滑过渡效果 */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* 响应式工具类 */
 @media (max-width: 768px) {
   .mobile-hidden {

@@ -114,6 +114,26 @@ export class ApiService {
   static createTradeStream(): EventSource {
     return new EventSource('/api/v1/trades/stream');
   }
+
+  // SOL价格相关API
+  static async getSolPrice(): Promise<number> {
+    try {
+      // 使用CoinGecko API获取SOL价格
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+      return response.data.solana.usd;
+    } catch (error) {
+      console.error('获取SOL价格失败:', error);
+      // 如果API失败，尝试备用API
+      try {
+        const response = await axios.get('https://api.coinbase.com/v2/exchange-rates?currency=SOL');
+        return parseFloat(response.data.data.rates.USD);
+      } catch (backupError) {
+        console.error('备用SOL价格API也失败:', backupError);
+        // 返回默认价格或抛出错误
+        return 135; // 默认价格
+      }
+    }
+  }
 }
 
 export default ApiService;
