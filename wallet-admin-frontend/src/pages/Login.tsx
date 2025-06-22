@@ -96,12 +96,6 @@ const Login: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-            默认账户: admin / admin123
-          </Typography.Text>
-        </div>
       </Card>
     </div>
   );

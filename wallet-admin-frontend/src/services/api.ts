@@ -86,28 +86,10 @@ export class ApiService {
     return response.data;
   }
 
-  // 认证相关API (模拟实现，实际需要后端支持)
+  // 认证相关API
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
-    // 模拟登录API调用
-    // 实际项目中需要后端提供认证接口
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (credentials.username === 'admin' && credentials.password === 'admin123') {
-          const response: LoginResponse = {
-            user: {
-              id: '1',
-              username: credentials.username,
-              role: 'admin',
-              token: 'mock_jwt_token_' + Date.now()
-            },
-            token: 'mock_jwt_token_' + Date.now()
-          };
-          resolve(response);
-        } else {
-          reject(new Error('用户名或密码错误'));
-        }
-      }, 1000);
-    });
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/login', credentials);
+    return response.data;
   }
 
   static async logout(): Promise<void> {

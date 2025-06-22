@@ -57,12 +57,24 @@ export const useAuthState = () => {
     setLoading(true);
     try {
       const response = await ApiService.login(credentials);
-      
-      // 保存用户信息和token到本地存储
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_info', JSON.stringify(response.user));
-      
-      setUser(response.user);
+
+      if (response.success && response.token) {
+        // 创建用户对象
+        const user: User = {
+          id: '1', // 后端API没有返回用户ID，使用默认值
+          username: credentials.username,
+          role: credentials.username === 'admin' ? 'admin' : 'user',
+          token: response.token
+        };
+
+        // 保存用户信息和token到本地存储
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('user_info', JSON.stringify(user));
+
+        setUser(user);
+      } else {
+        throw new Error(response.message || '登录失败');
+      }
     } catch (error) {
       throw error;
     } finally {
