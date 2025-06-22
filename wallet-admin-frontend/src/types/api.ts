@@ -95,6 +95,23 @@ export interface TradeStreamEvent {
   };
 }
 
+// 历史交易记录查询类型
+export interface TradeHistoryRequest {
+  limit?: number; // 限制返回记录数，默认100
+  offset?: number; // 偏移量，用于分页
+  start_time?: number; // 开始时间戳（秒）
+  end_time?: number; // 结束时间戳（秒）
+  trade_type?: 'buy' | 'sell'; // 交易类型筛选
+  status?: 'Pending' | 'Confirmed' | 'Failed'; // 状态筛选
+  wallet_address?: string; // 钱包地址筛选
+}
+
+export interface TradeHistoryResponse {
+  trades: TradeRecord[];
+  total: number; // 总记录数
+  has_more: boolean; // 是否还有更多数据
+}
+
 // 用户认证类型
 export interface User {
   id: string;

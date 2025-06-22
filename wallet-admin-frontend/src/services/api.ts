@@ -5,7 +5,9 @@ import type {
   UpdateWalletConfigRequest,
   LogsResponse,
   LoginRequest,
-  LoginResponse
+  LoginResponse,
+  TradeHistoryRequest,
+  TradeHistoryResponse
 } from '../types';
 
 // 创建axios实例
@@ -73,6 +75,14 @@ export class ApiService {
   // 日志相关API
   static async getLogs(): Promise<LogsResponse> {
     const response = await apiClient.get<LogsResponse>('/api/v1/logs');
+    return response.data;
+  }
+
+  // 交易记录相关API
+  static async getTradeHistory(params?: TradeHistoryRequest): Promise<TradeHistoryResponse> {
+    const response = await apiClient.get<TradeHistoryResponse>('/api/v1/trades/history', {
+      params: params
+    });
     return response.data;
   }
 

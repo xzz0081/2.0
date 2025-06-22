@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Table, Tag, Button, Typography, Space, Tooltip } from 'antd';
+import { Card, Table, Tag, Button, Typography, Space, Tooltip, Spin } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   ClearOutlined,
   WifiOutlined,
-  DisconnectOutlined
+  DisconnectOutlined,
+  LinkOutlined
 } from '@ant-design/icons';
 import type { TradeRecord } from '../types';
+import ApiService from '../services/api';
 
 const { Text } = Typography;
 
@@ -20,11 +22,90 @@ interface RealTimeTradeListProps {
 const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) => {
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<'backend' | 'localStorage' | 'none'>('none');
   const eventSourceRef = useRef<EventSource | null>(null);
+  const STORAGE_KEY = 'realtime_trades';
+
+  // 初始化数据加载：优先从后端获取，降级到localStorage
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+
+      try {
+        // 首先尝试从后端获取历史数据
+        console.log('🔍 尝试从后端获取交易历史...');
+        const historyData = await ApiService.getTradeHistory({
+          limit: maxItems,
+          // 获取最近的记录
+        });
+
+        if (historyData.trades && historyData.trades.length > 0) {
+          console.log('✅ 从后端加载交易记录:', historyData.trades.length, '条');
+          setTrades(historyData.trades);
+          setDataSource('backend');
+          // 同时保存到localStorage作为备份
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(historyData.trades));
+        } else {
+          console.log('📭 后端暂无交易记录，尝试从localStorage加载...');
+          throw new Error('后端无数据');
+        }
+      } catch (error) {
+        console.warn('⚠️ 后端获取失败，降级到localStorage:', error);
+
+        // 降级到localStorage
+        try {
+          const savedTrades = localStorage.getItem(STORAGE_KEY);
+          if (savedTrades) {
+            const parsedTrades = JSON.parse(savedTrades);
+            // 验证数据格式
+            if (Array.isArray(parsedTrades) && parsedTrades.every(trade =>
+              trade && typeof trade === 'object' && trade.trade_id
+            )) {
+              console.log('📂 从localStorage加载交易记录:', parsedTrades.length, '条');
+              setTrades(parsedTrades);
+              setDataSource('localStorage');
+            } else {
+              console.warn('⚠️ localStorage中的交易记录格式无效');
+              localStorage.removeItem(STORAGE_KEY);
+              setDataSource('none');
+            }
+          } else {
+            console.log('📭 localStorage中无交易记录');
+            setDataSource('none');
+          }
+        } catch (localError) {
+          console.error('❌ localStorage加载失败:', localError);
+          localStorage.removeItem(STORAGE_KEY);
+          setDataSource('none');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [maxItems]);
+
+  // 保存交易记录到localStorage（仅在有数据更新时）
+  useEffect(() => {
+    // 只在有数据且不是初始加载时保存
+    if (trades.length > 0 && !isLoading) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+        console.log('💾 交易记录已保存到localStorage:', trades.length, '条');
+      } catch (error) {
+        console.error('❌ 保存交易记录失败:', error);
+      }
+    }
+  }, [trades, isLoading]);
 
   // 清空交易记录
   const clearTrades = () => {
     setTrades([]);
+    localStorage.removeItem(STORAGE_KEY);
+    setDataSource('none');
+    console.log('🗑️ 交易记录已清空');
   };
 
   // 连接SSE交易流
@@ -124,12 +205,36 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // 格式化金额显示
+  // 跳转到区块链浏览器
+  const openBlockchainExplorer = (signature: string) => {
+    if (signature) {
+      const url = `https://solscan.io/tx/${signature}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  // 格式化金额显示（美元价格）
   const formatAmount = (amount: number) => {
-    return amount.toLocaleString('en-US', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 6 
+    return amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6
     });
+  };
+
+  // 格式化大数字显示（代币数量，精度为6）
+  const formatLargeNumber = (num: number) => {
+    // 先除以10^6得到真实数量
+    const realAmount = num / 1e6;
+
+    if (realAmount >= 1e9) {
+      return (realAmount / 1e9).toFixed(2) + 'B';
+    } else if (realAmount >= 1e6) {
+      return (realAmount / 1e6).toFixed(2) + 'M';
+    } else if (realAmount >= 1e3) {
+      return (realAmount / 1e3).toFixed(2) + 'K';
+    } else {
+      return realAmount.toFixed(2);
+    }
   };
 
   // 获取交易类型显示
@@ -166,7 +271,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       key: 'time',
       width: 80,
       render: (time: number) => (
-        <Text style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+        <Text style={{ fontSize: '12px', fontFamily: 'monospace', color: '#ffffff' }}>
           {new Date(time * 1000).toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
@@ -182,11 +287,17 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       width: 80,
       render: (type: string) => {
         const display = getTradeTypeDisplay(type);
+        const isBuy = type.toLowerCase() === 'buy';
         return (
           <Tag
             icon={display.icon}
-            color={type === 'buy' ? 'green' : 'red'}
-            style={{ fontWeight: 'bold' }}
+            color={isBuy ? 'green' : 'red'}
+            style={{
+              fontWeight: 'bold',
+              backgroundColor: isBuy ? '#52c41a' : '#ff4d4f',
+              borderColor: isBuy ? '#52c41a' : '#ff4d4f',
+              color: '#ffffff'
+            }}
           >
             {display.text}
           </Tag>
@@ -199,7 +310,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       key: 'usd_amount',
       width: 100,
       render: (amount: number) => (
-        <Text style={{ fontSize: '12px', fontWeight: 'bold' }}>
+        <Text style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff' }}>
           ${formatAmount(amount)}
         </Text>
       ),
@@ -209,11 +320,21 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       dataIndex: 'token_amount',
       key: 'token_amount',
       width: 120,
-      render: (amount: number) => (
-        <Text style={{ fontSize: '12px' }}>
-          {formatAmount(amount)}
-        </Text>
-      ),
+      render: (amount: number, record: TradeRecord) => {
+        const isBuyPending = record.trade_type.toLowerCase().includes('buy') && record.status === 'Pending';
+        return (
+          <Space direction="vertical" size={0}>
+            <Text style={{ fontSize: '12px', color: '#ffffff' }}>
+              {formatLargeNumber(amount)}
+            </Text>
+            {isBuyPending && (
+              <Text style={{ fontSize: '10px', color: '#cccccc' }}>
+                (预计)
+              </Text>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: '价格',
@@ -221,7 +342,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       key: 'price',
       width: 100,
       render: (price: number) => (
-        <Text style={{ fontSize: '12px' }}>
+        <Text style={{ fontSize: '12px', color: '#ffffff' }}>
           ${formatAmount(price)}
         </Text>
       ),
@@ -234,12 +355,12 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       render: (wallet: string, record: TradeRecord) => (
         <Space direction="vertical" size={0}>
           <Tooltip title={`钱包: ${wallet}`}>
-            <Text code style={{ fontSize: '11px', cursor: 'pointer' }}>
+            <Text code style={{ fontSize: '11px', cursor: 'pointer', color: '#ffffff', backgroundColor: '#333333' }}>
               {formatAddress(wallet)}
             </Text>
           </Tooltip>
           <Tooltip title={`代币: ${record.mint}`}>
-            <Text code style={{ fontSize: '10px', color: '#999', cursor: 'pointer' }}>
+            <Text code style={{ fontSize: '10px', color: '#cccccc', cursor: 'pointer', backgroundColor: '#333333' }}>
               {formatAddress(record.mint)}
             </Text>
           </Tooltip>
@@ -251,23 +372,70 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       dataIndex: 'status',
       key: 'status',
       width: 80,
-      render: (status: string, record: TradeRecord) => (
-        <Space direction="vertical" size={0}>
-          <Tag color={getStatusColor(status)} style={{ fontSize: '11px' }}>
-            {status}
-          </Tag>
-          {record.trade_type === 'sell' && record.profit_usd !== undefined && (
+      render: (status: string) => (
+        <Tag color={getStatusColor(status)} style={{ fontSize: '11px' }}>
+          {status}
+        </Tag>
+      ),
+    },
+    {
+      title: '盈亏',
+      dataIndex: 'profit_usd',
+      key: 'profit',
+      width: 90,
+      render: (profit: number | null, record: TradeRecord) => {
+        if (profit === null || profit === undefined) {
+          return <Text style={{ fontSize: '10px', color: '#666666' }}>-</Text>;
+        }
+
+        const isProfit = profit >= 0;
+        const displayValue = Math.abs(profit);
+
+        return (
+          <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
             <Text
               style={{
-                fontSize: '10px',
-                color: record.profit_usd >= 0 ? '#52c41a' : '#ff4d4f',
+                fontSize: '11px',
+                color: isProfit ? '#52c41a' : '#ff4d4f',
                 fontWeight: 'bold'
               }}
             >
-              {record.profit_usd >= 0 ? '+' : ''}${formatAmount(record.profit_usd)}
+              {isProfit ? '+' : '-'}${formatAmount(displayValue)}
             </Text>
-          )}
-        </Space>
+            <Text
+              style={{
+                fontSize: '9px',
+                color: isProfit ? '#52c41a' : '#ff4d4f',
+                opacity: 0.8
+              }}
+            >
+              {isProfit ? '盈利' : '亏损'}
+            </Text>
+          </Space>
+        );
+      },
+    },
+    {
+      title: '',
+      key: 'action',
+      width: 50,
+      render: (_, record: TradeRecord) => (
+        <Tooltip title="查看区块链浏览器">
+          <Button
+            type="text"
+            size="small"
+            icon={<LinkOutlined />}
+            onClick={() => openBlockchainExplorer(record.signature)}
+            disabled={!record.signature}
+            style={{
+              color: '#ffffff',
+              fontSize: '12px',
+              padding: '2px 4px',
+              height: '24px',
+              width: '24px'
+            }}
+          />
+        </Tooltip>
       ),
     },
   ];
@@ -276,7 +444,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
     <Card
       title={
         <Space>
-          <span>实时交易记录</span>
+          <span style={{ color: '#ffffff' }}>实时交易记录</span>
           <Tag
             icon={isConnected ? <WifiOutlined /> : <DisconnectOutlined />}
             color={isConnected ? 'green' : 'red'}
@@ -288,11 +456,16 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
               {trades.length} 条记录
             </Tag>
           )}
+          {dataSource !== 'none' && (
+            <Tag color={dataSource === 'backend' ? 'green' : 'orange'}>
+              {dataSource === 'backend' ? '后端数据' : '本地缓存'}
+            </Tag>
+          )}
         </Space>
       }
       extra={
         <Space>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
+          <Text style={{ fontSize: '12px', color: '#cccccc' }}>
             最大 {maxItems} 条
           </Text>
           <Button
@@ -301,31 +474,79 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
             onClick={clearTrades}
             size="small"
             disabled={trades.length === 0}
+            style={{ color: '#ffffff' }}
           >
             清空
           </Button>
         </Space>
       }
       size="small"
+      style={{
+        backgroundColor: '#1f1f1f',
+        borderColor: '#404040'
+      }}
+      headStyle={{
+        backgroundColor: '#2a2a2a',
+        borderBottom: '1px solid #404040'
+      }}
+      bodyStyle={{
+        backgroundColor: '#1f1f1f',
+        padding: '12px'
+      }}
     >
-      <Table
-        columns={columns}
-        dataSource={trades}
-        rowKey="trade_id"
-        pagination={false}
-        size="small"
-        locale={{ emptyText: '暂无交易记录' }}
-        scroll={{ y: 'calc(100vh - 300px)' }}
-        rowClassName={(record) =>
-          record.status === 'Pending' ? 'pending-trade-row' : ''
+      <Spin spinning={isLoading} tip="加载交易记录中...">
+        <Table
+          columns={columns}
+          dataSource={trades}
+          rowKey="trade_id"
+          pagination={false}
+          size="small"
+          locale={{
+            emptyText: isLoading ? '加载中...' :
+              dataSource === 'none' ? '暂无交易记录，等待实时数据...' : '暂无交易记录'
+          }}
+          scroll={{ y: 'calc(100vh - 300px)' }}
+          className="dark-table"
+          rowClassName={(record) =>
+            record.status === 'Pending' ? 'pending-trade-row' : 'normal-trade-row'
+          }
+        />
+      </Spin>
+      <style jsx global>{`
+        .dark-table {
+          background-color: #1f1f1f !important;
         }
-      />
-      <style jsx>{`
-        .pending-trade-row {
-          background-color: #fff7e6 !important;
+        .dark-table .ant-table {
+          background-color: #1f1f1f !important;
+          color: #ffffff !important;
         }
-        .pending-trade-row:hover {
-          background-color: #fff1b8 !important;
+        .dark-table .ant-table-thead > tr > th {
+          background-color: #2a2a2a !important;
+          color: #ffffff !important;
+          border-bottom: 1px solid #404040 !important;
+        }
+        .dark-table .ant-table-tbody > tr > td {
+          background-color: #1f1f1f !important;
+          color: #ffffff !important;
+          border-bottom: 1px solid #404040 !important;
+        }
+        .dark-table .ant-table-tbody > tr:hover > td {
+          background-color: #2a2a2a !important;
+        }
+        .normal-trade-row > td {
+          background-color: #1f1f1f !important;
+        }
+        .normal-trade-row:hover > td {
+          background-color: #2a2a2a !important;
+        }
+        .pending-trade-row > td {
+          background-color: #3a2a00 !important;
+        }
+        .pending-trade-row:hover > td {
+          background-color: #4a3500 !important;
+        }
+        .dark-table .ant-empty-description {
+          color: #ffffff !important;
         }
       `}</style>
     </Card>
