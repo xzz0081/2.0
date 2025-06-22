@@ -32,6 +32,7 @@ const Dashboard: React.FC = () => {
         activeWallets: 0,
         totalSolAmount: 0,
         avgFollowPercentage: 0,
+        strategyCounts: {},
       };
     }
 
@@ -40,15 +41,23 @@ const Dashboard: React.FC = () => {
     const totalSolAmount = wallets.reduce((sum, w) => {
       return sum + (w.sol_amount_max || 0);
     }, 0);
-    const avgFollowPercentage = wallets.length > 0 
-      ? wallets.reduce((sum, w) => sum + w.follow_percentage, 0) / wallets.length 
+    const avgFollowPercentage = wallets.length > 0
+      ? wallets.reduce((sum, w) => sum + (w.follow_percentage || 0), 0) / wallets.length
       : 0;
+
+    // 统计策略分布
+    const strategyCounts = wallets.reduce((acc, w) => {
+      const strategy = w.take_profit_strategy || 'none';
+      acc[strategy] = (acc[strategy] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
       totalWallets: wallets.length,
       activeWallets: activeWallets.length,
       totalSolAmount,
       avgFollowPercentage,
+      strategyCounts,
     };
   }, [walletConfigs]);
 
@@ -172,6 +181,37 @@ const Dashboard: React.FC = () => {
               precision={1}
               loading={isLoading}
             />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 策略分布 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24}>
+          <Card title="策略分布统计">
+            <Row gutter={16}>
+              {Object.entries(stats.strategyCounts).map(([strategy, count]) => {
+                const strategyMap = {
+                  'standard': { text: '标准分步', color: 'blue' },
+                  'trailing': { text: '追踪止盈', color: 'green' },
+                  'exponential': { text: '指数加码', color: 'orange' },
+                  'none': { text: '未设置', color: 'default' },
+                };
+                const config = strategyMap[strategy as keyof typeof strategyMap] || { text: strategy, color: 'default' };
+
+                return (
+                  <Col xs={12} sm={8} md={6} key={strategy}>
+                    <Card size="small">
+                      <Statistic
+                        title={<Tag color={config.color}>{config.text}</Tag>}
+                        value={count}
+                        suffix="个钱包"
+                      />
+                    </Card>
+                  </Col>
+                );
+              })}
+            </Row>
           </Card>
         </Col>
       </Row>
