@@ -8,6 +8,7 @@ import {
   FileTextOutlined,
   LogoutOutlined,
   UserOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -36,6 +37,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: '仪表板',
+    },
+    {
+      key: '/real-time-trades',
+      icon: <LineChartOutlined />,
+      label: '实时交易记录',
     },
     {
       key: '/wallet-config',

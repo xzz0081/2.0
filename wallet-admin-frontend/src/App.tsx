@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WalletConfig from './pages/WalletConfig';
 import Logs from './pages/Logs';
+import RealTimeTrades from './pages/RealTimeTrades';
 
 // 设置dayjs中文语言
 dayjs.locale('zh-cn');
@@ -58,6 +59,7 @@ function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/wallet-config" element={<WalletConfig />} />
                         <Route path="/logs" element={<Logs />} />
+                        <Route path="/real-time-trades" element={<RealTimeTrades />} />
                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                       </Routes>
                     </MainLayout>
