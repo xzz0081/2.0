@@ -152,13 +152,30 @@ const WalletConfigPage: React.FC = () => {
       title: '钱包地址',
       dataIndex: 'wallet_address',
       key: 'wallet_address',
-      width: 200,
+      width: 180,
       render: (address: string) => (
-        <Tooltip title={address}>
-          <Typography.Text code copyable>
+        <Tooltip title={`点击复制完整地址: ${address}`}>
+          <Typography.Text
+            code
+            copyable={{
+              text: address,
+              tooltips: ['复制完整地址', '已复制完整地址']
+            }}
+          >
             {`${address.slice(0, 8)}...${address.slice(-8)}`}
           </Typography.Text>
         </Tooltip>
+      ),
+    },
+    {
+      title: '备注',
+      dataIndex: 'remark',
+      key: 'remark',
+      width: 120,
+      render: (remark: string | null) => (
+        <Typography.Text style={{ color: remark ? '#ffffff' : '#666666' }}>
+          {remark || '无备注'}
+        </Typography.Text>
       ),
     },
     {
@@ -393,6 +410,17 @@ const WalletConfigPage: React.FC = () => {
         >
           {/* 基础配置 */}
           <Typography.Title level={5}>基础配置</Typography.Title>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="remark"
+                label="钱包备注"
+                tooltip="为这个钱包设置一个易于识别的备注名称"
+              >
+                <Input placeholder="例如：主力钱包、测试钱包等" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -736,6 +764,14 @@ const WalletConfigPage: React.FC = () => {
             ]}
           >
             <Input placeholder="请输入Solana钱包地址" />
+          </Form.Item>
+
+          <Form.Item
+            name="remark"
+            label="钱包备注"
+            tooltip="为这个钱包设置一个易于识别的备注名称"
+          >
+            <Input placeholder="例如：主力钱包、测试钱包等" />
           </Form.Item>
 
           <Row gutter={16}>

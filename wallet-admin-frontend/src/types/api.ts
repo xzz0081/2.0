@@ -3,6 +3,7 @@ export interface WalletConfig {
   // 基础配置
   wallet_address: string; // [必需] 钱包地址
   is_active: boolean; // [必需] 此策略配置是否启用
+  remark?: string | null; // [可选] 钱包备注名称
 
   // 交易执行参数
   slippage_percentage: number; // [必需] 滑点容忍度百分比
@@ -110,6 +111,25 @@ export interface TradeHistoryResponse {
   trades: TradeRecord[];
   total: number; // 总记录数
   has_more: boolean; // 是否还有更多数据
+}
+
+// 交易记录类型定义
+export interface TradeRecord {
+  trade_id: string; // 交易ID
+  status: 'Pending' | 'Confirmed' | 'Failed'; // 交易状态
+  trade_type: 'Buy' | 'Sell' | 'buy' | 'sell'; // 交易类型
+  signature: string; // 交易签名
+  mint: string; // 代币合约地址
+  block_time: number; // 区块时间戳（秒）
+  sol_price_usd: number; // SOL价格（USD）
+  sol_amount: number; // SOL数量
+  usd_amount: number; // USD金额
+  token_amount: number; // 代币数量（原始值，需要除以10^6）
+  user_wallet: string; // 我们自己的钱包地址
+  profit_usd: number | null; // 盈亏金额（USD），买入时为null
+  failure_reason: string | null; // 失败原因
+  target_wallet?: string; // [可选] 跟单目标钱包地址
+  target_wallet_remark?: string; // [可选] 跟单目标钱包备注
 }
 
 // 用户认证类型
