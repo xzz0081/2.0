@@ -1,19 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Alert, Tag } from 'antd';
+import React, { useState } from 'react';
+import { Card, Row, Col, Statistic, Typography, Alert, Tag, Modal, List, Button, message } from 'antd';
 import {
-  WalletOutlined,
   RiseOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  DollarOutlined,
+  PercentageOutlined,
+  TrophyOutlined,
+  WarningOutlined,
+  SwapOutlined,
+  FallOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import ApiService from '../services/api';
-import type { WalletConfigsResponse } from '../types';
+import type { WalletConfigsResponse, TradeRecord, WalletConfig } from '../types';
+import { useTradeContext } from '../components/Layout/MainLayout';
+import { useWalletRemarks } from '../hooks/useWalletRemarks';
 
 const { Title, Paragraph } = Typography;
 
 // 仪表板页面组件
 const Dashboard: React.FC = () => {
-  const [tradeCount, setTradeCount] = useState(0);
+  // 获取交易记录数据
+  const { trades } = useTradeContext();
+
+  // 本地钱包备注管理
+  const { getWalletRemark } = useWalletRemarks();
+
+  // 弹窗状态管理
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedStrategy, setSelectedStrategy] = useState<{
+    strategy: string;
+    text: string;
+    wallets: WalletConfig[];
+  } | null>(null);
 
   // 获取钱包配置数据
   const { data: walletConfigs, isLoading, error } = useQuery<WalletConfigsResponse>({
@@ -22,97 +42,168 @@ const Dashboard: React.FC = () => {
     refetchInterval: 30000, // 每30秒刷新一次
   });
 
-  // 计算统计数据
+  // 计算交易统计
+  const tradeStats = React.useMemo(() => {
+    if (!trades || trades.length === 0) {
+      return {
+        totalTrades: 0,
+        buyTrades: 0,
+        sellTrades: 0,
+        successTrades: 0,
+        failedTrades: 0,
+        totalUsdAmount: 0,
+        totalSolAmount: 0,
+        totalProfit: 0,
+        profitableTrades: 0,
+        lossTrades: 0,
+        avgTradeAmount: 0,
+        maxTradeAmount: 0,
+        minTradeAmount: 0,
+        buySuccessRate: 0,
+        sellSuccessRate: 0,
+        overallSuccessRate: 0,
+        profitRate: 0,
+        currentHoldings: 0,
+        uniqueTokens: 0,
+      };
+    }
+
+    const confirmedTrades = trades.filter(t => t.status === 'Confirmed');
+    const buyTrades = confirmedTrades.filter(t => t.trade_type.toLowerCase() === 'buy');
+    const sellTrades = confirmedTrades.filter(t => t.trade_type.toLowerCase() === 'sell');
+    const failedTrades = trades.filter(t => t.status === 'Failed');
+
+    const totalUsdAmount = confirmedTrades.reduce((sum, t) => sum + t.usd_amount, 0);
+    const totalSolAmount = confirmedTrades.reduce((sum, t) => sum + t.sol_amount, 0);
+    const totalProfit = sellTrades.reduce((sum, t) => sum + (t.profit_usd || 0), 0);
+
+    const profitableTrades = sellTrades.filter(t => (t.profit_usd || 0) > 0).length;
+    const lossTrades = sellTrades.filter(t => (t.profit_usd || 0) < 0).length;
+
+    const usdAmounts = confirmedTrades.map(t => t.usd_amount);
+    const maxTradeAmount = usdAmounts.length > 0 ? Math.max(...usdAmounts) : 0;
+    const minTradeAmount = usdAmounts.length > 0 ? Math.min(...usdAmounts) : 0;
+    const avgTradeAmount = confirmedTrades.length > 0 ? totalUsdAmount / confirmedTrades.length : 0;
+
+    const buySuccessRate = trades.filter(t => t.trade_type.toLowerCase() === 'buy').length > 0
+      ? (buyTrades.length / trades.filter(t => t.trade_type.toLowerCase() === 'buy').length) * 100
+      : 0;
+    const sellSuccessRate = trades.filter(t => t.trade_type.toLowerCase() === 'sell').length > 0
+      ? (sellTrades.length / trades.filter(t => t.trade_type.toLowerCase() === 'sell').length) * 100
+      : 0;
+    const overallSuccessRate = trades.length > 0 ? (confirmedTrades.length / trades.length) * 100 : 0;
+    const profitRate = sellTrades.length > 0 ? (profitableTrades / sellTrades.length) * 100 : 0;
+
+    // 计算当前持仓（买入 - 卖出）
+    const buyTokenAmounts = new Map<string, number>();
+    const sellTokenAmounts = new Map<string, number>();
+
+    buyTrades.forEach(t => {
+      const current = buyTokenAmounts.get(t.mint) || 0;
+      buyTokenAmounts.set(t.mint, current + t.token_amount);
+    });
+
+    sellTrades.forEach(t => {
+      const current = sellTokenAmounts.get(t.mint) || 0;
+      sellTokenAmounts.set(t.mint, current + t.token_amount);
+    });
+
+    let currentHoldings = 0;
+    const uniqueTokens = new Set([...buyTokenAmounts.keys(), ...sellTokenAmounts.keys()]).size;
+
+    buyTokenAmounts.forEach((buyAmount, mint) => {
+      const sellAmount = sellTokenAmounts.get(mint) || 0;
+      if (buyAmount > sellAmount) {
+        currentHoldings++;
+      }
+    });
+
+    return {
+      totalTrades: trades.length,
+      buyTrades: buyTrades.length,
+      sellTrades: sellTrades.length,
+      successTrades: confirmedTrades.length,
+      failedTrades: failedTrades.length,
+      totalUsdAmount,
+      totalSolAmount,
+      totalProfit,
+      profitableTrades,
+      lossTrades,
+      avgTradeAmount,
+      maxTradeAmount,
+      minTradeAmount,
+      buySuccessRate,
+      sellSuccessRate,
+      overallSuccessRate,
+      profitRate,
+      currentHoldings,
+      uniqueTokens,
+    };
+  }, [trades]);
+
+  // 计算钱包统计数据
   const stats = React.useMemo(() => {
     if (!walletConfigs) {
       return {
-        totalWallets: 0,
         activeWallets: 0,
-        totalSolAmount: 0,
-        avgFollowPercentage: 0,
         strategyCounts: {},
-        priceFilterStats: { withFilter: 0, withoutFilter: 0, bothLimits: 0, minOnly: 0, maxOnly: 0 },
+        strategyWallets: {},
       };
     }
 
     const wallets = Object.values(walletConfigs);
     const activeWallets = wallets.filter(w => w.is_active);
-    const totalSolAmount = wallets.reduce((sum, w) => {
-      return sum + (w.sol_amount_max || 0);
-    }, 0);
-    const avgFollowPercentage = wallets.length > 0
-      ? wallets.reduce((sum, w) => sum + (w.follow_percentage || 0), 0) / wallets.length
-      : 0;
 
-    // 统计策略分布
-    const strategyCounts = wallets.reduce((acc, w) => {
+    // 统计策略分布和按策略分组钱包
+    const strategyCounts: Record<string, number> = {};
+    const strategyWallets: Record<string, WalletConfig[]> = {};
+
+    wallets.forEach(w => {
       const strategy = w.take_profit_strategy || 'none';
-      acc[strategy] = (acc[strategy] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+      strategyCounts[strategy] = (strategyCounts[strategy] || 0) + 1;
 
-    // 统计价格筛选使用情况
-    const priceFilterStats = wallets.reduce((acc, w) => {
-      const hasMinPrice = w.min_price_multiplier !== null && w.min_price_multiplier !== undefined;
-      const hasMaxPrice = w.max_price_multiplier !== null && w.max_price_multiplier !== undefined;
-
-      if (hasMinPrice || hasMaxPrice) {
-        acc.withFilter++;
-      } else {
-        acc.withoutFilter++;
+      if (!strategyWallets[strategy]) {
+        strategyWallets[strategy] = [];
       }
-
-      if (hasMinPrice && hasMaxPrice) {
-        acc.bothLimits++;
-      } else if (hasMinPrice) {
-        acc.minOnly++;
-      } else if (hasMaxPrice) {
-        acc.maxOnly++;
-      }
-
-      return acc;
-    }, { withFilter: 0, withoutFilter: 0, bothLimits: 0, minOnly: 0, maxOnly: 0 });
+      strategyWallets[strategy].push(w);
+    });
 
     return {
-      totalWallets: wallets.length,
       activeWallets: activeWallets.length,
-      totalSolAmount,
-      avgFollowPercentage,
       strategyCounts,
-      priceFilterStats,
+      strategyWallets,
     };
   }, [walletConfigs]);
 
-  // 设置SSE连接监听交易数据
-  useEffect(() => {
-    let tradeEventSource: EventSource | null = null;
-
-    try {
-      // 交易流连接
-      tradeEventSource = ApiService.createTradeStream();
-      tradeEventSource.onmessage = () => {
-        try {
-          setTradeCount(prev => prev + 1);
-        } catch (error) {
-          console.error('解析交易数据失败:', error);
-        }
-      };
-
-      tradeEventSource.onerror = (error: any) => {
-        console.error('交易流连接错误:', error);
-      };
-
-    } catch (error) {
-      console.error('SSE连接初始化失败:', error);
-    }
-
-    // 清理函数
-    return () => {
-      if (tradeEventSource) {
-        tradeEventSource.close();
-      }
+  // 处理策略卡片点击
+  const handleStrategyClick = (strategy: string, count: number) => {
+    const strategyMap = {
+      'standard': '标准分步',
+      'trailing': '追踪止盈',
+      'exponential': '指数加码',
+      'none': '未设置',
     };
-  }, []);
+
+    const strategyText = strategyMap[strategy as keyof typeof strategyMap] || strategy;
+    const wallets = stats.strategyWallets[strategy] || [];
+
+    setSelectedStrategy({
+      strategy,
+      text: strategyText,
+      wallets,
+    });
+    setModalVisible(true);
+  };
+
+  // 复制地址到剪贴板
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('地址已复制到剪贴板');
+    } catch (err) {
+      message.error('复制失败');
+    }
+  };
 
   if (error) {
     return (
@@ -132,19 +223,155 @@ const Dashboard: React.FC = () => {
         实时监控钱包跟单系统的运行状态和关键指标
       </Paragraph>
 
-      {/* 统计卡片 */}
+      {/* 交易统计 - 置顶 */}
+      <Card
+        title={
+          <span>
+            <ThunderboltOutlined style={{ marginRight: 8 }} />
+            交易统计
+          </span>
+        }
+        extra={<Tag color="green">实时</Tag>}
+        style={{ marginBottom: 24 }}
+      >
+        <Row gutter={[16, 16]}>
+          {/* 基础交易统计 */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="总交易次数"
+                value={tradeStats.totalTrades}
+                prefix={<SwapOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="买入次数"
+                value={tradeStats.buyTrades}
+                prefix={<RiseOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="卖出次数"
+                value={tradeStats.sellTrades}
+                prefix={<FallOutlined />}
+                valueStyle={{ color: '#f5222d' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="成功率"
+                value={tradeStats.overallSuccessRate}
+                prefix={<CheckCircleOutlined />}
+                suffix="%"
+                precision={1}
+                valueStyle={{ color: tradeStats.overallSuccessRate >= 80 ? '#52c41a' : tradeStats.overallSuccessRate >= 60 ? '#faad14' : '#f5222d' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          {/* 金额统计 */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="总交易额"
+                value={tradeStats.totalUsdAmount}
+                prefix={<DollarOutlined />}
+                suffix="USD"
+                precision={2}
+                valueStyle={{ color: '#722ed1' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="平均交易额"
+                value={tradeStats.avgTradeAmount}
+                prefix={<PercentageOutlined />}
+                suffix="USD"
+                precision={2}
+                valueStyle={{ color: '#13c2c2' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="总盈亏"
+                value={tradeStats.totalProfit}
+                prefix={tradeStats.totalProfit >= 0 ? <TrophyOutlined /> : <WarningOutlined />}
+                suffix="USD"
+                precision={4}
+                valueStyle={{ color: tradeStats.totalProfit >= 0 ? '#52c41a' : '#f5222d' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card size="small">
+              <Statistic
+                title="盈利率"
+                value={tradeStats.profitRate}
+                prefix={<TrophyOutlined />}
+                suffix="%"
+                precision={1}
+                valueStyle={{ color: tradeStats.profitRate >= 60 ? '#52c41a' : tradeStats.profitRate >= 40 ? '#faad14' : '#f5222d' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          {/* 持仓统计 */}
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small">
+              <Statistic
+                title="当前持仓"
+                value={tradeStats.currentHoldings}
+                suffix="个代币"
+                valueStyle={{ color: '#fa8c16' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small">
+              <Statistic
+                title="交易代币数"
+                value={tradeStats.uniqueTokens}
+                suffix="种"
+                valueStyle={{ color: '#eb2f96' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small">
+              <Statistic
+                title="买卖比例"
+                value={tradeStats.buyTrades > 0 && tradeStats.sellTrades > 0
+                  ? (tradeStats.buyTrades / tradeStats.sellTrades).toFixed(2)
+                  : tradeStats.buyTrades > 0 ? '∞' : '0'}
+                suffix={tradeStats.buyTrades > 0 && tradeStats.sellTrades > 0 ? ':1' : ''}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* 活跃钱包统计 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={8}>
-          <Card>
-            <Statistic
-              title="钱包总数"
-              value={stats.totalWallets}
-              prefix={<WalletOutlined />}
-              loading={isLoading}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24}>
           <Card>
             <Statistic
               title="活跃钱包"
@@ -159,23 +386,11 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={8}>
-          <Card>
-            <Statistic
-              title="平均跟单比例"
-              value={stats.avgFollowPercentage}
-              prefix={<RiseOutlined />}
-              suffix="%"
-              precision={1}
-              loading={isLoading}
-            />
-          </Card>
-        </Col>
       </Row>
 
       {/* 策略分布 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={12}>
+        <Col xs={24}>
           <Card title="策略分布统计">
             <Row gutter={16}>
               {Object.entries(stats.strategyCounts).map(([strategy, count]) => {
@@ -188,8 +403,13 @@ const Dashboard: React.FC = () => {
                 const config = strategyMap[strategy as keyof typeof strategyMap] || { text: strategy, color: 'default' };
 
                 return (
-                  <Col xs={12} sm={12} md={12} key={strategy}>
-                    <Card size="small">
+                  <Col xs={12} sm={8} md={6} key={strategy}>
+                    <Card
+                      size="small"
+                      hoverable
+                      onClick={() => handleStrategyClick(strategy, count)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <Statistic
                         title={<Tag color={config.color}>{config.text}</Tag>}
                         value={count}
@@ -202,68 +422,63 @@ const Dashboard: React.FC = () => {
             </Row>
           </Card>
         </Col>
-        <Col xs={24} lg={12}>
-          <Card title="价格筛选统计">
-            <Row gutter={16}>
-              <Col xs={12} sm={12} md={12}>
-                <Card size="small">
-                  <Statistic
-                    title={<Tag color="green">启用筛选</Tag>}
-                    value={stats.priceFilterStats.withFilter}
-                    suffix="个钱包"
-                  />
-                </Card>
-              </Col>
-              <Col xs={12} sm={12} md={12}>
-                <Card size="small">
-                  <Statistic
-                    title={<Tag color="default">无筛选</Tag>}
-                    value={stats.priceFilterStats.withoutFilter}
-                    suffix="个钱包"
-                  />
-                </Card>
-              </Col>
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small">
-                  <Statistic
-                    title={<Tag color="blue" style={{ fontSize: '10px' }}>双限制</Tag>}
-                    value={stats.priceFilterStats.bothLimits}
-                  />
-                </Card>
-              </Col>
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small">
-                  <Statistic
-                    title={<Tag color="cyan" style={{ fontSize: '10px' }}>仅最低</Tag>}
-                    value={stats.priceFilterStats.minOnly}
-                  />
-                </Card>
-              </Col>
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small">
-                  <Statistic
-                    title={<Tag color="purple" style={{ fontSize: '10px' }}>仅最高</Tag>}
-                    value={stats.priceFilterStats.maxOnly}
-                  />
-                </Card>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
       </Row>
 
-      {/* 实时数据 */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card title="交易统计" extra={<Tag color="green">实时</Tag>}>
-            <Statistic
-              title="今日交易次数"
-              value={tradeCount}
-              prefix={<ThunderboltOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* 策略钱包详情弹窗 */}
+      <Modal
+        title={`${selectedStrategy?.text || ''} - 钱包列表`}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={null}
+        width={600}
+      >
+        {selectedStrategy && (
+          <List
+            dataSource={selectedStrategy.wallets}
+            renderItem={(wallet) => {
+              const remark = getWalletRemark(wallet.wallet_address);
+              const isActive = wallet.is_active;
+
+              return (
+                <List.Item
+                  actions={[
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => copyToClipboard(wallet.wallet_address)}
+                    >
+                      复制地址
+                    </Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 'bold' }}>{remark}</span>
+                        <Tag color={isActive ? 'green' : 'red'}>
+                          {isActive ? '运行中' : '已停止'}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#666', marginBottom: 4 }}>
+                          地址: {wallet.wallet_address}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          跟单比例: {wallet.follow_percentage || 0}% |
+                          滑点: {wallet.slippage_percentage || 0}%
+                        </div>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
+          />
+        )}
+      </Modal>
+
     </div>
   );
 };
