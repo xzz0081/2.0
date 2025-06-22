@@ -98,7 +98,7 @@ export const useTradeStore = create<TradeStore>((set, get) => ({
     try {
       // 获取钱包配置
       console.log('🔍 获取钱包配置...');
-      const configs = await ApiService.getWalletConfigs();
+      const configs = await ApiService.getWalletConfigurations();
       setWalletConfigs(configs);
       console.log('✅ 钱包配置加载完成:', Object.keys(configs).length, '个');
     } catch (error) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Table, Tag, Button, Typography, Space, Tooltip, Spin } from 'antd';
+import { Card, Table, Tag, Button, Typography, Space, Tooltip, Spin, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   ArrowUpOutlined,
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import type { TradeRecord } from '../types';
 import { useTradeContext } from './Layout/MainLayout';
+import { useWalletRemarks } from '../hooks/useWalletRemarks';
 
 const { Text } = Typography;
 
@@ -21,12 +22,19 @@ interface RealTimeTradeListProps {
 // 实时交易记录列表组件
 const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) => {
   // 使用全局交易记录状态
-  const { trades, isConnected, isLoading, dataSource, walletConfigs, clearTrades } = useTradeContext();
+  const { trades, isConnected, isLoading, dataSource, clearTrades } = useTradeContext();
 
-  // 获取钱包备注
-  const getWalletRemark = (walletAddress: string): string => {
-    const config = walletConfigs[walletAddress];
-    return config?.remark || formatAddress(walletAddress);
+  // 本地钱包备注管理
+  const { getWalletRemark } = useWalletRemarks();
+
+  // 复制地址到剪贴板
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('地址已复制到剪贴板');
+    } catch (err) {
+      message.error('复制失败');
+    }
   };
 
   // 格式化地址显示
@@ -183,14 +191,15 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       key: 'trader',
       width: 120,
       render: (wallet: string, record: TradeRecord) => {
-        // 优先显示跟单目标钱包备注，如果没有则显示我们自己的钱包备注
-        const targetWallet = record.target_wallet || wallet;
-        const displayRemark = record.target_wallet_remark || getWalletRemark(targetWallet);
-        const isOurWallet = !record.target_wallet;
+        // 优先使用followed_wallet，如果没有则使用target_wallet（向后兼容），最后使用我们自己的钱包
+        const followedWallet = record.followed_wallet || record.target_wallet;
+        const targetWallet = followedWallet || wallet;
+        const displayRemark = getWalletRemark(targetWallet);
+        const isOurWallet = !followedWallet;
 
         return (
           <Space direction="vertical" size={0}>
-            <Tooltip title={`${isOurWallet ? '我们的钱包' : '跟单目标'}: ${targetWallet}`}>
+            <Tooltip title={`点击复制地址: ${targetWallet}`}>
               <Text
                 style={{
                   fontSize: '11px',
@@ -198,6 +207,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
                   color: isOurWallet ? '#ffa940' : '#52c41a',
                   fontWeight: 'bold'
                 }}
+                onClick={() => copyToClipboard(targetWallet)}
               >
                 {displayRemark}
               </Text>
@@ -227,7 +237,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
       dataIndex: 'profit_usd',
       key: 'profit',
       width: 90,
-      render: (profit: number | null, record: TradeRecord) => {
+      render: (profit: number | null) => {
         if (profit === null || profit === undefined) {
           return <Text style={{ fontSize: '10px', color: '#666666' }}>-</Text>;
         }
@@ -356,7 +366,7 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
           }
         />
       </Spin>
-      <style jsx global>{`
+      <style>{`
         .dark-table {
           background-color: #1f1f1f !important;
         }

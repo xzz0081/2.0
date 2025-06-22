@@ -19,16 +19,17 @@ import {
   Popconfirm,
   Tooltip
 } from 'antd';
-import { 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  EditOutlined,
+  DeleteOutlined,
   ReloadOutlined,
-  WalletOutlined 
+  WalletOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ApiService from '../services/api';
 import type { WalletConfig, WalletConfigsResponse } from '../types';
 import { useSolPrice } from '../hooks/useSolPrice';
+import { useWalletRemarks } from '../hooks/useWalletRemarks';
 import { formatPrice, usdToPriceMultiplier, priceMultiplierToUsd } from '../utils/priceUtils';
 
 const { Title } = Typography;
@@ -38,12 +39,17 @@ const WalletConfigPage: React.FC = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editingWallet, setEditingWallet] = useState<WalletConfig | null>(null);
+  const [editingRemark, setEditingRemark] = useState<string | null>(null);
+  const [remarkInputValue, setRemarkInputValue] = useState<string>('');
   const [form] = Form.useForm();
   const [addForm] = Form.useForm();
   const queryClient = useQueryClient();
 
   // 获取实时SOL价格用于转换
   const { solPrice } = useSolPrice();
+
+  // 本地钱包备注管理
+  const { getWalletRemarkOrNull, setWalletRemark } = useWalletRemarks();
 
   // 获取钱包配置数据
   const { data: walletConfigs, isLoading, refetch } = useQuery<WalletConfigsResponse>({
@@ -169,14 +175,64 @@ const WalletConfigPage: React.FC = () => {
     },
     {
       title: '备注',
-      dataIndex: 'remark',
+      dataIndex: 'wallet_address',
       key: 'remark',
       width: 120,
-      render: (remark: string | null) => (
-        <Typography.Text style={{ color: remark ? '#ffffff' : '#666666' }}>
-          {remark || '无备注'}
-        </Typography.Text>
-      ),
+      render: (address: string) => {
+        const localRemark = getWalletRemarkOrNull(address);
+        const isEditing = editingRemark === address;
+
+        if (isEditing) {
+          const handleSaveRemark = () => {
+            const newRemark = remarkInputValue.trim();
+            if (newRemark) {
+              setWalletRemark(address, newRemark);
+            }
+            setEditingRemark(null);
+            setRemarkInputValue('');
+          };
+
+          return (
+            <Input
+              size="small"
+              value={remarkInputValue}
+              autoFocus
+              onChange={(e) => setRemarkInputValue(e.target.value)}
+              onBlur={handleSaveRemark}
+              onPressEnter={handleSaveRemark}
+              placeholder="输入备注"
+              style={{ width: '100%' }}
+            />
+          );
+        }
+
+        return (
+          <Tooltip title="点击编辑备注">
+            <Typography.Text
+              style={{
+                color: localRemark ? '#ff4d4f' : '#999999',
+                cursor: 'pointer',
+                padding: '2px 4px',
+                borderRadius: '2px',
+                transition: 'background-color 0.2s',
+                fontWeight: localRemark ? 'bold' : 'normal'
+              }}
+              onClick={() => {
+                setEditingRemark(address);
+                setRemarkInputValue(localRemark || '');
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2a2a2a';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              {localRemark || '点击添加备注'}
+            </Typography.Text>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '状态',

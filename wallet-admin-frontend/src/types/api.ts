@@ -126,10 +126,11 @@ export interface TradeRecord {
   usd_amount: number; // USD金额
   token_amount: number; // 代币数量（原始值，需要除以10^6）
   user_wallet: string; // 我们自己的钱包地址
+  followed_wallet: string | null; // [新增] 被跟随的钱包地址
   profit_usd: number | null; // 盈亏金额（USD），买入时为null
   failure_reason: string | null; // 失败原因
-  target_wallet?: string; // [可选] 跟单目标钱包地址
-  target_wallet_remark?: string; // [可选] 跟单目标钱包备注
+  target_wallet?: string; // [可选] 跟单目标钱包地址（向后兼容）
+  target_wallet_remark?: string; // [可选] 跟单目标钱包备注（向后兼容）
 }
 
 // 用户认证类型
