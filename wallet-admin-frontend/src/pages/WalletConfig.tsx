@@ -57,18 +57,40 @@ const WalletConfigPage: React.FC = () => {
     queryFn: ApiService.getWalletConfigurations,
   });
 
+  // 同步后端备注到本地存储
+  React.useEffect(() => {
+    if (walletConfigs) {
+      Object.values(walletConfigs).forEach(config => {
+        if (config.remark && !getWalletRemarkOrNull(config.wallet_address)) {
+          setWalletRemark(config.wallet_address, config.remark);
+        }
+      });
+    }
+  }, [walletConfigs, getWalletRemarkOrNull, setWalletRemark]);
+
   // 更新钱包配置
   const updateMutation = useMutation({
     mutationFn: ApiService.updateWalletConfiguration,
-    onSuccess: () => {
-      message.success('钱包配置更新成功');
+    onSuccess: (_, variables) => {
+      // 判断是否是新增操作（没有editingWallet表示是新增）
+      const isAddOperation = !editingWallet;
+
+      message.success(isAddOperation ? '钱包配置添加成功' : '钱包配置更新成功');
       queryClient.invalidateQueries({ queryKey: ['walletConfigs'] });
+
+      // 如果是添加操作且有备注，同时保存到本地存储
+      if (isAddOperation && variables.remark) {
+        setWalletRemark(variables.wallet_address, variables.remark);
+      }
+
       setEditModalVisible(false);
+      setAddModalVisible(false);
       setEditingWallet(null);
       form.resetFields();
+      addForm.resetFields();
     },
     onError: (error) => {
-      message.error(`更新失败: ${error.message}`);
+      message.error(`操作失败: ${error.message}`);
     },
   });
 
@@ -148,8 +170,6 @@ const WalletConfigPage: React.FC = () => {
     delete (newConfig as any).max_price_usd;
 
     updateMutation.mutate(newConfig);
-    setAddModalVisible(false);
-    addForm.resetFields();
   };
 
   // 表格列定义
@@ -790,7 +810,8 @@ const WalletConfigPage: React.FC = () => {
         }}
         onOk={() => addForm.submit()}
         confirmLoading={updateMutation.isPending}
-        width={600}
+        width={800}
+        style={{ top: 20 }}
       >
         <Form
           form={addForm}
@@ -809,6 +830,12 @@ const WalletConfigPage: React.FC = () => {
             accelerator_tip_percentage: 1.0,
             min_price_usd: 0.0001,
             max_price_usd: 0.01,
+            hard_stop_loss_pct: 20.0,
+            callback_stop_pct: 10.0,
+            entry_confirmation_secs: 300,
+            dynamic_hold_trigger_pct: 5.0,
+            dynamic_hold_extend_secs: 60,
+            dynamic_hold_max_secs: 1800,
           }}
         >
           <Form.Item
@@ -822,67 +849,118 @@ const WalletConfigPage: React.FC = () => {
             <Input placeholder="请输入Solana钱包地址" />
           </Form.Item>
 
-          <Form.Item
-            name="remark"
-            label="钱包备注"
-            tooltip="为这个钱包设置一个易于识别的备注名称"
-          >
-            <Input placeholder="例如：主力钱包、测试钱包等" />
-          </Form.Item>
-
+          {/* 基础配置 */}
+          <Typography.Title level={5}>基础配置</Typography.Title>
           <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="remark"
+                label="钱包备注"
+                tooltip="为这个钱包设置一个易于识别的备注名称"
+              >
+                <Input placeholder="例如：主力钱包、测试钱包等" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="follow_percentage"
+                label="跟单比例 (%)"
+                tooltip="相对于被跟随者的交易额，100.0代表1:1跟单"
+              >
+                <InputNumber min={0} max={1000} step={0.1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
             <Col span={12}>
               <Form.Item
                 name="slippage_percentage"
                 label="滑点百分比 (%)"
                 rules={[{ required: true, message: '请输入滑点百分比' }]}
+                tooltip="允许成交价与预估价的偏差百分比"
               >
                 <InputNumber min={0} max={50} step={0.1} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                name="follow_percentage"
-                label="跟单比例 (%)"
-              >
-                <InputNumber min={0} max={1000} step={0.1} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
           </Row>
 
+          {/* 交易执行参数 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>交易执行参数</Typography.Title>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name="priority_fee"
                 label="优先费用"
                 rules={[{ required: true, message: '请输入优先费用' }]}
+                tooltip="Solana交易的优先费用，单位是 micro-lamports"
               >
                 <InputNumber min={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name="compute_unit_limit"
                 label="计算单元限制"
                 rules={[{ required: true, message: '请输入计算单元限制' }]}
+                tooltip="交易的计算单元限制"
               >
                 <InputNumber min={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
+            <Col span={8}>
+              <Form.Item
+                name="accelerator_tip_percentage"
+                label="加速器小费 (%)"
+                tooltip="使用交易加速器时，支付的小费占买入金额的百分比"
+              >
+                <InputNumber min={0} max={10} step={0.1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
           </Row>
 
+          {/* 跟单金额控制 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>跟单金额控制</Typography.Title>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="sol_amount_min"
+                label="最小 SOL 数量"
+                tooltip="购买金额的SOL绝对值下限"
+              >
+                <InputNumber min={0} step={0.00000001} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="sol_amount_max"
+                label="最大 SOL 数量"
+                tooltip="购买金额的SOL绝对值上限"
+              >
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 价格筛选控制 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>价格筛选控制</Typography.Title>
+          <Alert
+            message={`当前SOL价格: ${formatPrice(solPrice)}`}
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="min_price_usd"
                 label="最低价格筛选 (美元)"
-                tooltip="只跟单价格 >= 此值的代币"
+                tooltip="只跟单价格 >= 此值的代币。设为空表示不限制最低价格"
               >
                 <InputNumber
                   min={0}
                   step={0.0001}
                   style={{ width: '100%' }}
-                  placeholder="$0.0001"
+                  placeholder="例如: $0.0001"
                   addonBefore="$"
                 />
               </Form.Item>
@@ -891,29 +969,199 @@ const WalletConfigPage: React.FC = () => {
               <Form.Item
                 name="max_price_usd"
                 label="最高价格筛选 (美元)"
-                tooltip="只跟单价格 <= 此值的代币"
+                tooltip="只跟单价格 <= 此值的代币。设为空表示不限制最高价格"
               >
                 <InputNumber
                   min={0}
                   step={0.001}
                   style={{ width: '100%' }}
-                  placeholder="$0.01"
+                  placeholder="例如: $0.01"
                   addonBefore="$"
                 />
               </Form.Item>
             </Col>
           </Row>
 
+          {/* 止盈策略配置 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>止盈策略配置</Typography.Title>
           <Form.Item
             name="take_profit_strategy"
-            label="止盈策略"
+            label="止盈策略类型"
+            tooltip="选择止盈策略：标准分步、追踪止盈或指数加码"
           >
-            <Select>
-              <Select.Option value="exponential">指数加码卖出（推荐）</Select.Option>
+            <Select style={{ width: '100%' }} placeholder="请选择止盈策略">
               <Select.Option value="standard">标准分步止盈</Select.Option>
               <Select.Option value="trailing">追踪止盈</Select.Option>
+              <Select.Option value="exponential">指数加码卖出</Select.Option>
             </Select>
           </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) =>
+            prevValues.take_profit_strategy !== currentValues.take_profit_strategy
+          }>
+            {({ getFieldValue }) => {
+              const strategy = getFieldValue('take_profit_strategy');
+
+              if (strategy === 'standard') {
+                return (
+                  <>
+                    <Typography.Text type="secondary">标准分步止盈配置</Typography.Text>
+                    <Row gutter={16} style={{ marginTop: 8 }}>
+                      <Col span={8}>
+                        <Form.Item
+                          name="take_profit_start_pct"
+                          label="起始止盈 (%)"
+                          tooltip="开始止盈的盈利百分比"
+                        >
+                          <InputNumber min={0} max={1000} step={1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="take_profit_step_pct"
+                          label="止盈步长 (%)"
+                          tooltip="每次止盈的步长百分比"
+                        >
+                          <InputNumber min={0} max={100} step={1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="take_profit_sell_portion_pct"
+                          label="卖出比例 (%)"
+                          tooltip="每次止盈时卖出的持仓比例"
+                        >
+                          <InputNumber min={0} max={100} step={1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </>
+                );
+              }
+
+              if (strategy === 'trailing') {
+                return (
+                  <>
+                    <Typography.Text type="secondary">追踪止盈配置</Typography.Text>
+                    <Row gutter={16} style={{ marginTop: 8 }}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="trailing_stop_profit_percentage"
+                          label="追踪止盈百分比 (%)"
+                          tooltip="价格回调多少百分比时触发止盈"
+                        >
+                          <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </>
+                );
+              }
+
+              if (strategy === 'exponential') {
+                return (
+                  <>
+                    <Typography.Text type="secondary">指数加码卖出配置</Typography.Text>
+                    <Row gutter={16} style={{ marginTop: 8 }}>
+                      <Col span={8}>
+                        <Form.Item
+                          name="exponential_sell_trigger_step_pct"
+                          label="触发台阶 (%)"
+                          tooltip="触发卖出的盈利台阶，例如10.0表示在+10%, +20%, +30%...时触发"
+                        >
+                          <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="exponential_sell_base_portion_pct"
+                          label="基础比例 (%)"
+                          tooltip="计算卖出份额的基础比例"
+                        >
+                          <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="exponential_sell_power"
+                          label="指数幂"
+                          tooltip="计算卖出份额的幂，例如2.0代表按阶段的平方计算"
+                        >
+                          <InputNumber min={1} max={10} step={0.1} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </>
+                );
+              }
+
+              return null;
+            }}
+          </Form.Item>
+
+          {/* 风险管理 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>风险管理</Typography.Title>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="hard_stop_loss_pct"
+                label="硬止损 (%)"
+                tooltip="价格相比买入价下跌这么多时，立即清仓"
+              >
+                <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="callback_stop_pct"
+                label="回调止损 (%)"
+                tooltip="价格相比历史最高价下跌这么多时，立即清仓"
+              >
+                <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 动态持仓时间策略 */}
+          <Typography.Title level={5} style={{ marginTop: 16 }}>动态持仓时间策略</Typography.Title>
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item
+                name="entry_confirmation_secs"
+                label="初始持仓时间 (秒)"
+                tooltip="买入后，若超过这个秒数无任何操作，则自动清仓"
+              >
+                <InputNumber min={0} max={3600} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="dynamic_hold_trigger_pct"
+                label="延长触发 (%)"
+                tooltip="触发持仓延长的价格波动百分比"
+              >
+                <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="dynamic_hold_extend_secs"
+                label="延长时间 (秒)"
+                tooltip="每次触发后，延长持仓的秒数"
+              >
+                <InputNumber min={0} max={3600} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="dynamic_hold_max_secs"
+                label="最长持仓 (秒)"
+                tooltip="通过动态延长，一笔交易允许的最长总持仓时间"
+              >
+                <InputNumber min={0} max={3600} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>
