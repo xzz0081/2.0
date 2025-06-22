@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, List, Tag, Button, Typography, Space, Tooltip } from 'antd';
-import { 
-  ArrowUpOutlined, 
-  ArrowDownOutlined, 
+import { Card, Table, Tag, Button, Typography, Space, Tooltip } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import {
+  ArrowUpOutlined,
+  ArrowDownOutlined,
   ClearOutlined,
   WifiOutlined,
-  DisconnectOutlined 
+  DisconnectOutlined
 } from '@ant-design/icons';
 import type { TradeRecord } from '../types';
 
@@ -43,37 +44,47 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
 
         eventSourceRef.current.onmessage = (event) => {
           try {
-            console.log('收到SSE消息:', event.data);
-            
+            console.log('🔄 收到SSE消息:', event.data);
+
             // 跳过keep-alive消息
             if (event.data.trim() === '' || event.data.includes('keep-alive')) {
+              console.log('⏭️ 跳过keep-alive消息');
               return;
             }
-            
+
             const tradeData: TradeRecord = JSON.parse(event.data);
-            console.log('解析的交易数据:', tradeData);
-            
+            console.log('📊 解析的交易数据:', {
+              trade_id: tradeData.trade_id,
+              status: tradeData.status,
+              trade_type: tradeData.trade_type,
+              usd_amount: tradeData.usd_amount,
+              sol_amount: tradeData.sol_amount,
+              profit_usd: tradeData.profit_usd,
+              block_time: tradeData.block_time
+            });
+
             setTrades(prevTrades => {
               // 检查是否已存在相同trade_id的记录
               const existingIndex = prevTrades.findIndex(t => t.trade_id === tradeData.trade_id);
-              
+
               let newTrades;
               if (existingIndex >= 0) {
                 // 更新现有记录（状态变化：Pending -> Confirmed/Failed）
                 newTrades = [...prevTrades];
                 newTrades[existingIndex] = tradeData;
-                console.log('更新现有交易记录:', tradeData.trade_id, tradeData.status);
+                console.log('🔄 更新现有交易记录:', tradeData.trade_id,
+                  `${prevTrades[existingIndex].status} -> ${tradeData.status}`);
               } else {
                 // 添加新记录到顶部
                 newTrades = [tradeData, ...prevTrades];
-                console.log('添加新交易记录:', tradeData.trade_id, tradeData.status);
+                console.log('➕ 添加新交易记录:', tradeData.trade_id, tradeData.status);
               }
-              
+
               // 限制最大记录数
               return newTrades.slice(0, maxItems);
             });
           } catch (error) {
-            console.error('解析交易数据失败:', error, '原始数据:', event.data);
+            console.error('❌ 解析交易数据失败:', error, '原始数据:', event.data);
           }
         };
 
@@ -121,15 +132,15 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
     });
   };
 
-  // 获取交易类型图标和颜色
+  // 获取交易类型显示
   const getTradeTypeDisplay = (tradeType: string) => {
     switch (tradeType) {
       case 'buy':
-        return { icon: <ArrowUpOutlined />, color: 'green', text: '买入' };
+        return { icon: <ArrowUpOutlined />, color: '#52c41a', text: '买入' };
       case 'sell':
-        return { icon: <ArrowDownOutlined />, color: 'red', text: '卖出' };
+        return { icon: <ArrowDownOutlined />, color: '#ff4d4f', text: '卖出' };
       default:
-        return { icon: null, color: 'default', text: tradeType };
+        return { icon: null, color: '#666', text: tradeType };
     }
   };
 
@@ -147,114 +158,176 @@ const RealTimeTradeList: React.FC<RealTimeTradeListProps> = ({ maxItems = 50 }) 
     }
   };
 
+  // 表格列定义
+  const columns: ColumnsType<TradeRecord> = [
+    {
+      title: '时间',
+      dataIndex: 'block_time',
+      key: 'time',
+      width: 80,
+      render: (time: number) => (
+        <Text style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+          {new Date(time * 1000).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })}
+        </Text>
+      ),
+    },
+    {
+      title: '类型',
+      dataIndex: 'trade_type',
+      key: 'type',
+      width: 80,
+      render: (type: string) => {
+        const display = getTradeTypeDisplay(type);
+        return (
+          <Tag
+            icon={display.icon}
+            color={type === 'buy' ? 'green' : 'red'}
+            style={{ fontWeight: 'bold' }}
+          >
+            {display.text}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: '金额 USD',
+      dataIndex: 'usd_amount',
+      key: 'usd_amount',
+      width: 100,
+      render: (amount: number) => (
+        <Text style={{ fontSize: '12px', fontWeight: 'bold' }}>
+          ${formatAmount(amount)}
+        </Text>
+      ),
+    },
+    {
+      title: '数量',
+      dataIndex: 'token_amount',
+      key: 'token_amount',
+      width: 120,
+      render: (amount: number) => (
+        <Text style={{ fontSize: '12px' }}>
+          {formatAmount(amount)}
+        </Text>
+      ),
+    },
+    {
+      title: '价格',
+      dataIndex: 'sol_price_usd',
+      key: 'price',
+      width: 100,
+      render: (price: number) => (
+        <Text style={{ fontSize: '12px' }}>
+          ${formatAmount(price)}
+        </Text>
+      ),
+    },
+    {
+      title: '交易者',
+      dataIndex: 'user_wallet',
+      key: 'trader',
+      width: 120,
+      render: (wallet: string, record: TradeRecord) => (
+        <Space direction="vertical" size={0}>
+          <Tooltip title={`钱包: ${wallet}`}>
+            <Text code style={{ fontSize: '11px', cursor: 'pointer' }}>
+              {formatAddress(wallet)}
+            </Text>
+          </Tooltip>
+          <Tooltip title={`代币: ${record.mint}`}>
+            <Text code style={{ fontSize: '10px', color: '#999', cursor: 'pointer' }}>
+              {formatAddress(record.mint)}
+            </Text>
+          </Tooltip>
+        </Space>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 80,
+      render: (status: string, record: TradeRecord) => (
+        <Space direction="vertical" size={0}>
+          <Tag color={getStatusColor(status)} style={{ fontSize: '11px' }}>
+            {status}
+          </Tag>
+          {record.trade_type === 'sell' && record.profit_usd !== undefined && (
+            <Text
+              style={{
+                fontSize: '10px',
+                color: record.profit_usd >= 0 ? '#52c41a' : '#ff4d4f',
+                fontWeight: 'bold'
+              }}
+            >
+              {record.profit_usd >= 0 ? '+' : ''}${formatAmount(record.profit_usd)}
+            </Text>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <Card
       title={
         <Space>
           <span>实时交易记录</span>
-          <Tag 
+          <Tag
             icon={isConnected ? <WifiOutlined /> : <DisconnectOutlined />}
             color={isConnected ? 'green' : 'red'}
           >
             {isConnected ? '已连接' : '未连接'}
           </Tag>
+          {trades.length > 0 && (
+            <Tag color="blue">
+              {trades.length} 条记录
+            </Tag>
+          )}
         </Space>
       }
       extra={
-        <Button 
-          type="text" 
-          icon={<ClearOutlined />} 
-          onClick={clearTrades}
-          size="small"
-        >
-          清空
-        </Button>
+        <Space>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            最大 {maxItems} 条
+          </Text>
+          <Button
+            type="text"
+            icon={<ClearOutlined />}
+            onClick={clearTrades}
+            size="small"
+            disabled={trades.length === 0}
+          >
+            清空
+          </Button>
+        </Space>
       }
       size="small"
     >
-      <List
+      <Table
+        columns={columns}
         dataSource={trades}
+        rowKey="trade_id"
+        pagination={false}
+        size="small"
         locale={{ emptyText: '暂无交易记录' }}
-        renderItem={(trade) => {
-          const typeDisplay = getTradeTypeDisplay(trade.trade_type);
-          
-          return (
-            <List.Item style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-              <div style={{ width: '100%' }}>
-                {/* 第一行：交易类型、状态、时间 */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  marginBottom: '4px'
-                }}>
-                  <Space size="small">
-                    <Tag icon={typeDisplay.icon} color={typeDisplay.color}>
-                      {typeDisplay.text}
-                    </Tag>
-                    <Tag color={getStatusColor(trade.status)}>
-                      {trade.status}
-                    </Tag>
-                  </Space>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>
-                    {new Date(trade.block_time * 1000).toLocaleTimeString()}
-                  </Text>
-                </div>
-
-                {/* 第二行：金额信息 */}
-                <div style={{ marginBottom: '4px' }}>
-                  <Space direction="vertical" size={0}>
-                    <Text style={{ fontSize: '12px' }}>
-                      <strong>${formatAmount(trade.usd_amount)}</strong>
-                      {' '}({formatAmount(trade.sol_amount)} SOL)
-                    </Text>
-                    {trade.trade_type === 'sell' && trade.profit_usd !== undefined && (
-                      <Text 
-                        style={{ 
-                          fontSize: '11px',
-                          color: trade.profit_usd >= 0 ? '#52c41a' : '#ff4d4f'
-                        }}
-                      >
-                        利润: {trade.profit_usd >= 0 ? '+' : ''}${formatAmount(trade.profit_usd)}
-                      </Text>
-                    )}
-                  </Space>
-                </div>
-
-                {/* 第三行：地址信息 */}
-                <div style={{ fontSize: '10px', color: '#999' }}>
-                  <div>
-                    <Tooltip title={trade.user_wallet}>
-                      钱包: {formatAddress(trade.user_wallet)}
-                    </Tooltip>
-                  </div>
-                  <div>
-                    <Tooltip title={trade.mint}>
-                      代币: {formatAddress(trade.mint)}
-                    </Tooltip>
-                  </div>
-                  {trade.signature && (
-                    <div>
-                      <Tooltip title={trade.signature}>
-                        签名: {formatAddress(trade.signature)}
-                      </Tooltip>
-                    </div>
-                  )}
-                </div>
-
-                {/* 失败原因 */}
-                {trade.status === 'Failed' && trade.failure_reason && (
-                  <div style={{ marginTop: '4px' }}>
-                    <Text type="danger" style={{ fontSize: '10px' }}>
-                      失败原因: {trade.failure_reason}
-                    </Text>
-                  </div>
-                )}
-              </div>
-            </List.Item>
-          );
-        }}
+        scroll={{ y: 'calc(100vh - 300px)' }}
+        rowClassName={(record) =>
+          record.status === 'Pending' ? 'pending-trade-row' : ''
+        }
       />
+      <style jsx>{`
+        .pending-trade-row {
+          background-color: #fff7e6 !important;
+        }
+        .pending-trade-row:hover {
+          background-color: #fff1b8 !important;
+        }
+      `}</style>
     </Card>
   );
 };
