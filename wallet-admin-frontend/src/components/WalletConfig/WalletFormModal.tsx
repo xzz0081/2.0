@@ -33,10 +33,31 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
     if (mode === 'edit' && editingWallet && visible) {
       const formValues = {
         ...editingWallet,
+        // 价格转换
         min_price_usd: editingWallet.min_price_multiplier ? 
           (editingWallet.min_price_multiplier * solPrice).toFixed(6) : undefined,
         max_price_usd: editingWallet.max_price_multiplier ? 
           (editingWallet.max_price_multiplier * solPrice).toFixed(3) : undefined,
+        
+        // 跟单金额字段名转换（API字段名 -> 前端字段名）
+        min_follow_amount_sol: editingWallet.sol_amount_min || undefined,
+        max_follow_amount_sol: editingWallet.sol_amount_max || undefined,
+        
+        // 确保必需字段有默认值
+        follow_mode: editingWallet.follow_mode || 'Percentage',
+        slippage_percentage: editingWallet.slippage_percentage ?? 5.0,
+        priority_fee: editingWallet.priority_fee ?? 150000,
+        compute_unit_limit: editingWallet.compute_unit_limit ?? 80000,
+        accelerator_tip_percentage: editingWallet.accelerator_tip_percentage ?? 1.0,
+        take_profit_strategy: editingWallet.take_profit_strategy || 'standard',
+        
+        // 自动暂停配置默认值
+        auto_suspend_config: editingWallet.auto_suspend_config || {
+          enabled: true,
+          window_size: 1,
+          loss_count: 1,
+          loss_threshold: -5.0
+        }
       };
       form.setFieldsValue(formValues);
     }
@@ -48,6 +69,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       ...values,
       min_price_multiplier: values.min_price_usd ? usdToPriceMultiplier(values.min_price_usd, solPrice) : null,
       max_price_multiplier: values.max_price_usd ? usdToPriceMultiplier(values.max_price_usd, solPrice) : null,
+      
+      // 转换跟单金额字段名（前端字段名 -> API字段名）
+      sol_amount_min: values.min_follow_amount_sol || null,
+      sol_amount_max: values.max_follow_amount_sol || null,
     };
 
     // 根据跟单模式清空对应字段
@@ -57,9 +82,11 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       processedValues.follow_percentage = null;
     }
 
-    // 移除临时的USD字段
+    // 移除临时字段
     delete processedValues.min_price_usd;
     delete processedValues.max_price_usd;
+    delete processedValues.min_follow_amount_sol;
+    delete processedValues.max_follow_amount_sol;
 
     onSubmit(processedValues);
   };

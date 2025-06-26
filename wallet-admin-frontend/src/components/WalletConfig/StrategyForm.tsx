@@ -32,20 +32,7 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
           </Form.Item>
         </Col>
         
-        <Col span={3}>
-          <Form.Item
-            name="min_partial_sell_pct"
-            label="最小卖出保护 (%)"
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="20"
-              min={1}
-              max={100}
-              step={1}
-            />
-          </Form.Item>
-        </Col>
+
 
         {/* 标准止盈策略 */}
         {strategy === 'standard' && (
@@ -170,7 +157,7 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
         {/* 布林带策略 */}
         {strategy === 'volatility' && (
           <>
-            <Col span={3}>
+            <Col span={4}>
               <Form.Item name="volatility_bb_window_size" label="布林带窗口">
                 <InputNumber
                   style={{ width: '100%' }}
@@ -180,7 +167,7 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
+            <Col span={4}>
               <Form.Item name="volatility_bb_stddev" label="标准差倍数">
                 <InputNumber
                   style={{ width: '100%' }}
@@ -192,8 +179,8 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
-              <Form.Item name="volatility_atr_sampling_size" label="ATR采样大小">
+            <Col span={4}>
+              <Form.Item name="volatility_atr_samples" label="ATR采样大小">
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="14"
@@ -202,7 +189,7 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
+            <Col span={4}>
               <Form.Item name="volatility_atr_multiplier" label="ATR倍数">
                 <InputNumber
                   style={{ width: '100%' }}
@@ -214,23 +201,34 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
-              <Form.Item name="volatility_min_profit_threshold" label="最小盈利阈值 (%)">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="5"
-                  min={1}
-                  max={100}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={3}>
-              <Form.Item name="volatility_sell_pct" label="卖出比例 (%)">
+
+            <Col span={4}>
+              <Form.Item name="volatility_sell_percent" label="卖出比例 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="100"
                   min={1}
                   max={100}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="min_partial_sell_pct" label="最小卖出保护 (%)">
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="20"
+                  min={1}
+                  max={100}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="volatility_cooldown_ms" label="冷却时间 (毫秒)">
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="1000"
+                  min={100}
+                  max={10000}
                 />
               </Form.Item>
             </Col>
