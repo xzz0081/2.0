@@ -5,49 +5,72 @@ export interface WalletConfig {
   is_active: boolean; // [必需] 此策略配置是否启用
   remark?: string | null; // [可选] 钱包备注名称
 
+  // --- 跟单模式控制 ---
+  follow_mode?: "Percentage" | "FixedAmount"; // [可选] 跟单模式，向后兼容
+
+  // --- 跟单金额控制 ---
+  follow_percentage?: number | null; // [%] 百分比跟单
+  fixed_follow_amount_sol?: number | null; // [SOL] 固定金额跟单，百分比模式下填 null
+  sol_amount_min?: number | null; // [SOL] 被跟随者最小成交额
+  sol_amount_max?: number | null; // [SOL] 被跟随者最大成交额
+
+  // --- 价格筛选 ---
+  min_price_multiplier?: number | null; // [可选] 最低价格筛选倍数（内部存储）
+  max_price_multiplier?: number | null; // [可选] 最高价格筛选倍数（内部存储）
+
   // 交易执行参数
   slippage_percentage: number; // [必需] 滑点容忍度百分比
   priority_fee: number; // [必需] Solana交易的优先费用，单位是 micro-lamports
   compute_unit_limit: number; // [必需] 交易的计算单元限制
   accelerator_tip_percentage?: number | null; // [可选] 使用交易加速器时的小费百分比
 
-  // 跟单金额控制
-  follow_percentage?: number | null; // [可选] 跟单金额百分比
-  sol_amount_min?: number | null; // [可选] 购买金额的SOL绝对值下限
-  sol_amount_max?: number | null; // [可选] 购买金额的SOL绝对值上限
+  // --- 核心止盈策略选择 ---
+  take_profit_strategy?: "standard" | "trailing" | "exponential" | "volatility" | null; // [重要] 止盈策略类型
 
-  // 价格筛选控制 (新增功能) - 内部存储为multiplier，界面显示为USD
-  min_price_multiplier?: number | null; // [可选] 最低价格筛选倍数（内部存储）
-  max_price_multiplier?: number | null; // [可选] 最高价格筛选倍数（内部存储）
-
-  // 核心止盈策略选择
-  take_profit_strategy?: string | null; // [重要] 止盈策略类型: "standard" | "trailing" | "exponential"
-
-  // [策略一] "standard" (标准分步止盈)
+  // --- standard 策略 ---
   take_profit_start_pct?: number | null;
   take_profit_step_pct?: number | null;
   take_profit_sell_portion_pct?: number | null;
 
-  // [策略二] "trailing" (追踪止盈)
+  // --- trailing 策略 ---
   trailing_stop_profit_percentage?: number | null;
 
-  // [策略三] "exponential" (指数加码卖出)
+  // --- exponential 策略 ---
   exponential_sell_trigger_step_pct?: number | null; // [指数策略] 触发卖出的盈利台阶
   exponential_sell_base_portion_pct?: number | null; // [指数策略] 计算卖出份额的基础比例
   exponential_sell_power?: number | null; // [指数策略] 计算卖出份额的幂
 
-  // 通用风险管理
+  // --- volatility 策略 ---
+  volatility_bb_window_size?: number | null; // [波动性策略] 布林带窗口大小
+  volatility_bb_stddev?: number | null; // [波动性策略] 布林带标准差倍数
+  volatility_atr_samples?: number | null; // [波动性策略] ATR采样数量
+  volatility_atr_multiplier?: number | null; // [波动性策略] ATR倍数
+  volatility_sell_percent?: number | null; // [波动性策略] 卖出比例
+  volatility_cooldown_ms?: number | null; // [波动性策略] 冷却时间(毫秒)
+
+  // --- 最小卖出/剩余仓位比例保护 ---
+  min_partial_sell_pct?: number | null; // [%] 单次卖出或剩余仓位低于该百分比时直接清仓；0 或 null 关闭
+
+  // --- 通用风险管理 ---
   hard_stop_loss_pct?: number | null; // [可选] 硬止损
   callback_stop_pct?: number | null; // [可选] 回调止损
 
-  // 动态持仓时间策略
+  // --- 动态持仓时间策略 ---
   entry_confirmation_secs?: number | null; // [可选] 初始持仓时间
   dynamic_hold_trigger_pct?: number | null; // [可选] 触发持仓延长的价格波动百分比
+  dynamic_hold_check_window_secs?: number | null; // [可选] 检查窗口时间
   dynamic_hold_extend_secs?: number | null; // [可选] 每次触发后，延长持仓的秒数
   dynamic_hold_max_secs?: number | null; // [可选] 通过动态延长，一笔交易允许的最长总持仓时间
 
+  // --- 自动暂停 ---
+  auto_suspend_config?: {
+    enabled: boolean;
+    window_size: number;
+    loss_count: number;
+    loss_threshold: number;
+  } | null;
+
   // 已废弃或暂不使用的字段
-  dynamic_hold_check_window_secs?: number | null; // (暂未使用)
   stop_loss_percentage?: number | null; // (已废弃)
   take_profit_percentage_legacy?: number | null; // (已废弃)
   tip_config?: any | null; // (兼容旧版本)

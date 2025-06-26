@@ -1,30 +1,51 @@
 import { create } from 'zustand';
-import type { TradeRecord, WalletConfig } from '../types';
+import { TradeRecord, WalletConfig } from '../types/api';
 import ApiService from '../services/api';
 
 interface TradeStore {
-  // 状态
+  // 交易数据相关
   trades: TradeRecord[];
+  selectedTrade: TradeRecord | null;
+  
+  // 连接状态
   isConnected: boolean;
   isLoading: boolean;
-  dataSource: 'backend' | 'localStorage' | 'none';
+  
+  // 数据源控制
+  dataSource: 'api' | 'sse';
+  
+  // 钱包配置
   walletConfigs: Record<string, WalletConfig>;
+  
+  // 面板控制
   isPanelOpen: boolean;
+  
+  // 分页
+  currentPage: number;
+  pageSize: number;
+  total: number;
   
   // SSE连接
   eventSource: EventSource | null;
   
   // 操作方法
   setTrades: (trades: TradeRecord[]) => void;
+  setSelectedTrade: (trade: TradeRecord | null) => void;
   addTrade: (trade: TradeRecord) => void;
   updateTrade: (trade: TradeRecord) => void;
   clearTrades: () => void;
-  setConnected: (connected: boolean) => void;
-  setLoading: (loading: boolean) => void;
-  setDataSource: (source: 'backend' | 'localStorage' | 'none') => void;
-  setWalletConfigs: (configs: Record<string, WalletConfig>) => void;
-  togglePanel: () => void;
-  setPanelOpen: (open: boolean) => void;
+  
+  // 连接状态控制
+  setConnected: (isConnected: boolean) => void;
+  setLoading: (isLoading: boolean) => void;
+  setDataSource: (dataSource: 'api' | 'sse') => void;
+  setWalletConfigs: (walletConfigs: Record<string, WalletConfig>) => void;
+  setPanelOpen: (isPanelOpen: boolean) => void;
+  
+  // 分页控制
+  setCurrentPage: (currentPage: number) => void;
+  setPageSize: (pageSize: number) => void;
+  setTotal: (total: number) => void;
   
   // 初始化和连接方法
   initializeStore: () => Promise<void>;
@@ -38,57 +59,59 @@ const MAX_TRADES = 50;
 export const useTradeStore = create<TradeStore>((set, get) => ({
   // 初始状态
   trades: [],
+  selectedTrade: null,
   isConnected: false,
-  isLoading: true,
-  dataSource: 'none',
+  isLoading: false,
+  dataSource: 'api',
   walletConfigs: {},
   isPanelOpen: false,
+  currentPage: 1,
+  pageSize: 20,
+  total: 0,
   eventSource: null,
 
-  // 基础操作
-  setTrades: (trades) => {
-    set({ trades });
-    // 保存到localStorage
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
-    } catch (error) {
-      console.error('❌ 保存交易记录失败:', error);
-    }
+  // Actions implementation
+  setTrades: (trades: TradeRecord[]) => {
+    set({ 
+      trades,
+      total: trades.length 
+    });
   },
-
-  addTrade: (trade) => {
+  
+  setSelectedTrade: (trade: TradeRecord | null) => set({ selectedTrade: trade }),
+  
+  addTrade: (trade: TradeRecord) => {
     const { trades } = get();
-    const newTrades = [trade, ...trades].slice(0, MAX_TRADES);
-    get().setTrades(newTrades);
+    set({ trades: [trade, ...trades] });
   },
-
-  updateTrade: (trade) => {
+  
+  updateTrade: (trade: TradeRecord) => {
     const { trades } = get();
-    const existingIndex = trades.findIndex(t => t.trade_id === trade.trade_id);
-    
+    const existingIndex = trades.findIndex((t: TradeRecord) => t.trade_id === trade.trade_id);
     if (existingIndex >= 0) {
       const newTrades = [...trades];
       newTrades[existingIndex] = trade;
-      get().setTrades(newTrades);
-      console.log('🔄 更新交易记录:', trade.trade_id, trade.status);
-    } else {
-      get().addTrade(trade);
-      console.log('➕ 添加新交易记录:', trade.trade_id, trade.status);
+      set({ trades: newTrades });
     }
   },
-
-  clearTrades: () => {
-    set({ trades: [] });
-    localStorage.removeItem(STORAGE_KEY);
-    console.log('🗑️ 交易记录已清空');
-  },
-
-  setConnected: (isConnected) => set({ isConnected }),
-  setLoading: (isLoading) => set({ isLoading }),
-  setDataSource: (dataSource) => set({ dataSource }),
-  setWalletConfigs: (walletConfigs) => set({ walletConfigs }),
-  togglePanel: () => set((state) => ({ isPanelOpen: !state.isPanelOpen })),
-  setPanelOpen: (isPanelOpen) => set({ isPanelOpen }),
+  
+  clearTrades: () => set({ 
+    trades: [], 
+    selectedTrade: null,
+    total: 0 
+  }),
+  
+  // 连接状态控制
+  setConnected: (isConnected: boolean) => set({ isConnected }),
+  setLoading: (isLoading: boolean) => set({ isLoading }),
+  setDataSource: (dataSource: 'api' | 'sse') => set({ dataSource }),
+  setWalletConfigs: (walletConfigs: Record<string, WalletConfig>) => set({ walletConfigs }),
+  setPanelOpen: (isPanelOpen: boolean) => set({ isPanelOpen }),
+  
+  // 分页控制
+  setCurrentPage: (currentPage: number) => set({ currentPage }),
+  setPageSize: (pageSize: number) => set({ pageSize }),
+  setTotal: (total: number) => set({ total }),
 
   // 初始化存储
   initializeStore: async () => {
@@ -112,41 +135,54 @@ export const useTradeStore = create<TradeStore>((set, get) => ({
         limit: MAX_TRADES,
       });
       
-      if (historyData.trades && historyData.trades.length > 0) {
+      if (historyData.trades.length > 0) {
         console.log('✅ 从后端加载交易记录:', historyData.trades.length, '条');
         setTrades(historyData.trades);
-        setDataSource('backend');
+        setDataSource('api');
       } else {
         console.log('📭 后端暂无交易记录，尝试从localStorage加载...');
-        throw new Error('后端无数据');
+        // 从localStorage加载
+        try {
+          const savedTrades = localStorage.getItem(STORAGE_KEY);
+          if (savedTrades) {
+            const parsedTrades = JSON.parse(savedTrades);
+            if (Array.isArray(parsedTrades) && parsedTrades.length > 0) {
+              console.log('✅ 从localStorage加载交易记录:', parsedTrades.length, '条');
+              setTrades(parsedTrades);
+              setDataSource('api');
+            } else {
+              console.log('📭 localStorage也无数据');
+              setDataSource('api');
+            }
+          } else {
+            console.log('📭 localStorage也无数据');
+            setDataSource('api');
+          }
+        } catch (localError) {
+          console.error('❌ localStorage加载失败:', localError);
+          setDataSource('api');
+        }
       }
     } catch (error) {
-      console.warn('⚠️ 后端获取失败，降级到localStorage:', error);
-      
-      // 降级到localStorage
+      console.error('❌ 从后端加载交易记录失败:', error);
+      // 尝试从localStorage加载
       try {
         const savedTrades = localStorage.getItem(STORAGE_KEY);
         if (savedTrades) {
           const parsedTrades = JSON.parse(savedTrades);
-          if (Array.isArray(parsedTrades) && parsedTrades.every(trade => 
-            trade && typeof trade === 'object' && trade.trade_id
-          )) {
-            console.log('📂 从localStorage加载交易记录:', parsedTrades.length, '条');
+          if (Array.isArray(parsedTrades) && parsedTrades.length > 0) {
+            console.log('✅ 从localStorage加载交易记录:', parsedTrades.length, '条');
             setTrades(parsedTrades);
-            setDataSource('localStorage');
+            setDataSource('api');
           } else {
-            console.warn('⚠️ localStorage中的交易记录格式无效');
-            localStorage.removeItem(STORAGE_KEY);
-            setDataSource('none');
+            setDataSource('api');
           }
         } else {
-          console.log('📭 localStorage中无交易记录');
-          setDataSource('none');
+          setDataSource('api');
         }
       } catch (localError) {
         console.error('❌ localStorage加载失败:', localError);
-        localStorage.removeItem(STORAGE_KEY);
-        setDataSource('none');
+        setDataSource('api');
       }
     } finally {
       setLoading(false);

@@ -14,7 +14,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSolPrice } from '../../hooks/useSolPrice';
 import type { TradeRecord, WalletConfig } from '../../types';
-import ApiService from '../../services/api';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -58,7 +57,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'backend' | 'localStorage' | 'none'>('none');
-  const [walletConfigs, setWalletConfigs] = useState<Record<string, WalletConfig>>({});
+  const [walletConfigs] = useState<Record<string, WalletConfig>>({});
   const eventSourceRef = useRef<EventSource | null>(null);
   const STORAGE_KEY = 'realtime_trades';
   const MAX_ITEMS = 50;

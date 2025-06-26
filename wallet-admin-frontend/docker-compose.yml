@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  wallet-admin-frontend:
+    build: .
+    ports:
+      - "3000:80"
+    container_name: wallet-admin-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - wallet-network
+
+networks:
+  wallet-network:
+    driver: bridge

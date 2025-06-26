@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import ApiService from '../services/api';
-import type { WalletConfigsResponse, TradeRecord, WalletConfig } from '../types';
+import type { WalletConfigsResponse, WalletConfig } from '../types';
 import { useTradeContext } from '../components/Layout/MainLayout';
 import { useWalletRemarks } from '../hooks/useWalletRemarks';
 
@@ -176,7 +176,7 @@ const Dashboard: React.FC = () => {
   }, [walletConfigs]);
 
   // 处理策略卡片点击
-  const handleStrategyClick = (strategy: string, count: number) => {
+  const handleStrategyClick = (strategy: string) => {
     const strategyMap = {
       'standard': '标准分步',
       'trailing': '追踪止盈',
@@ -407,7 +407,7 @@ const Dashboard: React.FC = () => {
                     <Card
                       size="small"
                       hoverable
-                      onClick={() => handleStrategyClick(strategy, count)}
+                      onClick={() => handleStrategyClick(strategy)}
                       style={{ cursor: 'pointer' }}
                     >
                       <Statistic
