@@ -4,6 +4,7 @@ import type {
   WalletConfigsResponse,
   UpdateWalletConfigRequest,
   LogsResponse,
+  ClearLogsResponse,
   LoginRequest,
   LoginResponse,
   TradeHistoryRequest,
@@ -13,7 +14,7 @@ import type {
 // 创建axios实例
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
-    baseURL: 'http://127.0.0.1:8080', // 根据API文档的默认地址
+    baseURL: import.meta.env.DEV ? '' : 'http://127.0.0.1:8080', // 开发环境使用代理，生产环境使用绝对URL
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
@@ -75,6 +76,12 @@ export class ApiService {
   // 日志相关API
   static async getLogs(): Promise<LogsResponse> {
     const response = await apiClient.get<LogsResponse>('/api/v1/logs');
+    return response.data;
+  }
+
+  static async clearLogs(): Promise<ClearLogsResponse> {
+    // 直接调用后端接口清除日志，不传任何参数
+    const response = await axios.post<ClearLogsResponse>('http://127.0.0.1:8080/api/v1/logs/clear');
     return response.data;
   }
 

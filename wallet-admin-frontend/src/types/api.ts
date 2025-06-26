@@ -97,6 +97,14 @@ export interface LogsResponse {
   [logFileName: string]: string;
 }
 
+// 清除日志响应类型
+export interface ClearLogsResponse {
+  success: boolean;
+  message: string;
+  cleared_files?: number;
+  freed_space_bytes?: number;
+}
+
 // SSE事件类型
 export interface PriceStreamEvent {
   type: 'price';

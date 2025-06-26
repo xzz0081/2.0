@@ -8,20 +8,23 @@ import {
   Tag, 
   Select,
   Alert,
-  Spin
+  Spin,
+  Modal,
+  message
 } from 'antd';
 import { 
   ReloadOutlined, 
   SearchOutlined, 
   FileTextOutlined,
-  DownloadOutlined 
+  DownloadOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ApiService from '../services/api';
-import type { LogsResponse } from '../types';
+import type { LogsResponse, ClearLogsResponse } from '../types';
 
 const { Title, Text } = Typography;
-// const { TextArea } = Input;
 const { Option } = Select;
 
 // 日志级别颜色映射
@@ -39,12 +42,34 @@ const LogsPage: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [filteredLogs, setFilteredLogs] = useState<string>('');
   const [logLevel, setLogLevel] = useState<string>('ALL');
+  const [clearModalVisible, setClearModalVisible] = useState(false);
 
-  // 获取日志数据
+  const queryClient = useQueryClient();
+
+  // 获取日志数据 - 进入页面时自动获取一次
   const { data: logsData, isLoading, refetch, error } = useQuery<LogsResponse>({
     queryKey: ['logs'],
     queryFn: ApiService.getLogs,
-    refetchInterval: 10000, // 每10秒自动刷新
+    staleTime: 0, // 数据立即过期，确保每次进入页面都重新获取
+    refetchOnMount: true, // 组件挂载时重新获取
+    refetchOnWindowFocus: false, // 窗口聚焦时不自动刷新
+  });
+
+  // 清除日志的mutation
+  const clearLogsMutation = useMutation<ClearLogsResponse>({
+    mutationFn: ApiService.clearLogs,
+    onSuccess: (data) => {
+      message.success(data.message || '日志清除成功！');
+      // 刷新日志数据
+      queryClient.invalidateQueries({ queryKey: ['logs'] });
+      // 清空当前选择
+      setSelectedLogFile('');
+      setFilteredLogs('');
+    },
+    onError: (error: any) => {
+      console.error('清除日志失败:', error);
+      message.error(`清除日志失败: ${error.message || '未知错误'}`);
+    }
   });
 
   // 获取日志文件列表
@@ -133,6 +158,22 @@ const LogsPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // 显示清除确认对话框
+  const showClearConfirm = () => {
+    setClearModalVisible(true);
+  };
+
+  // 确认清除日志
+  const handleConfirmClear = () => {
+    setClearModalVisible(false);
+    clearLogsMutation.mutate();
+  };
+
+  // 取消清除
+  const handleCancelClear = () => {
+    setClearModalVisible(false);
+  };
+
   if (error) {
     return (
       <Alert
@@ -208,6 +249,16 @@ const LogsPage: React.FC = () => {
           >
             下载
           </Button>
+
+          <Button
+            type="primary"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={showClearConfirm}
+            loading={clearLogsMutation.isPending}
+          >
+            清除日志
+          </Button>
         </Space>
       </Card>
 
@@ -216,7 +267,7 @@ const LogsPage: React.FC = () => {
         title={`日志内容 - ${selectedLogFile}`}
         extra={
           <Tag color="blue">
-            自动刷新: 10秒
+            手动刷新
           </Tag>
         }
       >
@@ -245,6 +296,26 @@ const LogsPage: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* 清除确认对话框 */}
+      <Modal
+        title="确认清除所有日志？"
+        open={clearModalVisible}
+        onOk={handleConfirmClear}
+        onCancel={handleCancelClear}
+        okText="确认清除"
+        cancelText="取消"
+        okType="danger"
+        confirmLoading={clearLogsMutation.isPending}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <ExclamationCircleOutlined style={{ color: '#faad14', fontSize: 22, marginRight: 12 }} />
+          <span>此操作将清除所有历史日志文件和缓存数据。</span>
+        </div>
+        <p style={{ color: '#ff4d4f', fontWeight: 'bold', marginLeft: 34 }}>
+          注意：此操作不可撤销！
+        </p>
+      </Modal>
     </div>
   );
 };
