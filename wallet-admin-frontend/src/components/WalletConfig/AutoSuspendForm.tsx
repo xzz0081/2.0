@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Row, Col, Switch, InputNumber, Typography, Alert } from 'antd';
+import { Form, Row, Col, Switch, Input, Typography, Alert } from 'antd';
 
 interface AutoSuspendFormProps {
   form: any;
@@ -39,16 +39,14 @@ const AutoSuspendForm: React.FC<AutoSuspendFormProps> = ({ form }) => {
                 name={['auto_suspend_config', 'window_size']}
                 label="监控窗口 (小时)"
                 rules={[
-                  { required: autoSuspendEnabled, message: '请输入监控窗口' },
-                  { type: 'number', min: 1, max: 24, message: '窗口范围：1-24小时' }
+                  { required: autoSuspendEnabled, message: '请输入监控窗口' }
                 ]}
                 initialValue={1}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="1"
-                  min={1}
-                  max={24}
+                  type="number"
                 />
               </Form.Item>
             </Col>
@@ -58,16 +56,14 @@ const AutoSuspendForm: React.FC<AutoSuspendFormProps> = ({ form }) => {
                 name={['auto_suspend_config', 'loss_count']}
                 label="连续亏损次数"
                 rules={[
-                  { required: autoSuspendEnabled, message: '请输入亏损次数阈值' },
-                  { type: 'number', min: 1, max: 10, message: '次数范围：1-10次' }
+                  { required: autoSuspendEnabled, message: '请输入亏损次数阈值' }
                 ]}
                 initialValue={1}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="1"
-                  min={1}
-                  max={10}
+                  type="number"
                 />
               </Form.Item>
             </Col>
@@ -77,18 +73,14 @@ const AutoSuspendForm: React.FC<AutoSuspendFormProps> = ({ form }) => {
                 name={['auto_suspend_config', 'loss_threshold']}
                 label="亏损阈值 (%)"
                 rules={[
-                  { required: autoSuspendEnabled, message: '请输入亏损阈值' },
-                  { type: 'number', min: -50, max: -1, message: '阈值范围：-50% 到 -1%' }
+                  { required: autoSuspendEnabled, message: '请输入亏损阈值' }
                 ]}
                 initialValue={-5.0}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="-5.0"
-                  min={-50}
-                  max={-1}
-                  step={0.1}
-                  precision={1}
+                  type="number"
                 />
               </Form.Item>
             </Col>

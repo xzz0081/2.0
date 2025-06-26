@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Row, Col, Radio, InputNumber, Typography } from 'antd';
+import { Form, Row, Col, Radio, Input, Typography } from 'antd';
 
 interface FollowModeFormProps {
   form: any;
@@ -34,17 +34,13 @@ const FollowModeForm: React.FC<FollowModeFormProps> = ({ form }) => {
               name="follow_percentage"
               label="跟单百分比 (%)"
               rules={[
-                { required: followMode === 'Percentage', message: '请输入跟单百分比' },
-                { type: 'number', min: 0.1, max: 100, message: '百分比范围：0.1-100%' }
+                { required: followMode === 'Percentage', message: '请输入跟单百分比' }
               ]}
             >
-              <InputNumber
+              <Input
                 style={{ width: '100%' }}
                 placeholder="5.0"
-                min={0.1}
-                max={100}
-                step={0.1}
-                precision={1}
+                type="number"
               />
             </Form.Item>
           </Col>
@@ -56,16 +52,13 @@ const FollowModeForm: React.FC<FollowModeFormProps> = ({ form }) => {
               name="fixed_follow_amount_sol"
               label="固定跟单金额 (SOL)"
               rules={[
-                { required: followMode === 'FixedAmount', message: '请输入固定跟单金额' },
-                { type: 'number', min: 0.001, message: '金额必须大于 0.001 SOL' }
+                { required: followMode === 'FixedAmount', message: '请输入固定跟单金额' }
               ]}
             >
-              <InputNumber
+              <Input
                 style={{ width: '100%' }}
-                placeholder="0.1"
-                min={0.001}
-                step={0.01}
-                precision={3}
+                placeholder="0.001"
+                type="number"
               />
             </Form.Item>
           </Col>

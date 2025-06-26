@@ -26,14 +26,21 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
   onCancel,
   loading
 }) => {
-  const { solPrice } = useSolPrice();
+  const { solPrice, refreshPrice } = useSolPrice(false); // 禁用自动刷新，手动按需获取
 
-  // 当编辑模式时，设置表单初始值
+  // 弹窗打开时获取最新SOL价格
+  React.useEffect(() => {
+    if (visible) {
+      refreshPrice(); // 获取最新价格用于USD转换
+    }
+  }, [visible, refreshPrice]);
+
+  // 当编辑模式时，设置表单初始值（只在模态框打开时执行一次）
   React.useEffect(() => {
     if (mode === 'edit' && editingWallet && visible) {
       const formValues = {
         ...editingWallet,
-        // 价格转换
+        // 价格转换 - 使用当前SOL价格进行一次性转换
         min_price_usd: editingWallet.min_price_multiplier ? 
           (editingWallet.min_price_multiplier * solPrice).toFixed(6) : undefined,
         max_price_usd: editingWallet.max_price_multiplier ? 
@@ -42,6 +49,15 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
         // 跟单金额字段名转换（API字段名 -> 前端字段名）
         min_follow_amount_sol: editingWallet.sol_amount_min || undefined,
         max_follow_amount_sol: editingWallet.sol_amount_max || undefined,
+
+        // 策略字段名映射（后端字段名 -> 前端字段名）
+        take_profit_targets_1_pct: editingWallet.take_profit_start_pct,
+        take_profit_targets_1_amount: editingWallet.take_profit_step_pct,
+        take_profit_targets_2_pct: editingWallet.take_profit_sell_portion_pct,
+        trailing_stop_activation_pct: editingWallet.trailing_stop_profit_percentage,
+        exponential_base_threshold: editingWallet.exponential_sell_trigger_step_pct,
+        exponential_multiplier: editingWallet.exponential_sell_power,
+        exponential_sell_pct: editingWallet.exponential_sell_base_portion_pct,
         
         // 确保必需字段有默认值
         follow_mode: editingWallet.follow_mode || 'Percentage',
@@ -61,19 +77,94 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       };
       form.setFieldsValue(formValues);
     }
-  }, [mode, editingWallet, visible, form, solPrice]);
+  }, [mode, editingWallet, visible, form]); // 移除solPrice依赖，避免价格更新时重复设置表单
 
   const handleFormSubmit = async (values: any) => {
+    // 数据类型转换函数
+    const parseNumber = (value: any) => {
+      if (value === null || value === undefined || value === '') return null;
+      const num = parseFloat(value);
+      return isNaN(num) ? null : num;
+    };
+
+    // 调试：打印提交前的原始数据
+    console.log('🔍 提交前原始数据:', values);
+
     // 转换美元价格为multiplier
     const processedValues = {
       ...values,
-      min_price_multiplier: values.min_price_usd ? usdToPriceMultiplier(values.min_price_usd, solPrice) : null,
-      max_price_multiplier: values.max_price_usd ? usdToPriceMultiplier(values.max_price_usd, solPrice) : null,
+      min_price_multiplier: values.min_price_usd ? usdToPriceMultiplier(parseNumber(values.min_price_usd) || 0, solPrice) : null,
+      max_price_multiplier: values.max_price_usd ? usdToPriceMultiplier(parseNumber(values.max_price_usd) || 0, solPrice) : null,
       
       // 转换跟单金额字段名（前端字段名 -> API字段名）
-      sol_amount_min: values.min_follow_amount_sol || null,
-      sol_amount_max: values.max_follow_amount_sol || null,
+      sol_amount_min: parseNumber(values.min_follow_amount_sol),
+      sol_amount_max: parseNumber(values.max_follow_amount_sol),
+      
+      // 转换数字字段
+      slippage_percentage: parseNumber(values.slippage_percentage),
+      accelerator_tip_percentage: parseNumber(values.accelerator_tip_percentage),
+      follow_percentage: parseNumber(values.follow_percentage),
+      fixed_follow_amount_sol: parseNumber(values.fixed_follow_amount_sol),
     };
+
+    // 处理自动暂停配置
+    if (values.auto_suspend_config) {
+      processedValues.auto_suspend_config = {
+        enabled: values.auto_suspend_config.enabled,
+        window_size: parseNumber(values.auto_suspend_config.window_size),
+        loss_count: parseNumber(values.auto_suspend_config.loss_count),
+        loss_threshold: parseNumber(values.auto_suspend_config.loss_threshold),
+      };
+    }
+
+    // 处理止盈策略字段名映射和类型转换
+    const fieldMappings = {
+      // standard 策略字段映射
+      'take_profit_targets_1_pct': 'take_profit_start_pct',
+      'take_profit_targets_1_amount': 'take_profit_step_pct', 
+      'take_profit_targets_2_pct': 'take_profit_sell_portion_pct',
+      
+      // trailing 策略字段映射
+      'trailing_stop_activation_pct': 'trailing_stop_profit_percentage',
+      
+      // exponential 策略字段映射
+      'exponential_base_threshold': 'exponential_sell_trigger_step_pct',
+      'exponential_multiplier': 'exponential_sell_power',
+      'exponential_sell_pct': 'exponential_sell_base_portion_pct',
+    };
+
+    // 应用字段映射
+    Object.entries(fieldMappings).forEach(([frontendField, backendField]) => {
+      if (values[frontendField] !== undefined) {
+        processedValues[backendField] = parseNumber(values[frontendField]);
+        // 删除前端字段名
+        delete processedValues[frontendField];
+      }
+    });
+
+    // 处理不需要映射的策略字段
+    const directStrategyFields = [
+      'volatility_bb_window_size', 'volatility_bb_stddev', 'volatility_atr_samples', 'volatility_atr_multiplier',
+      'volatility_sell_percent', 'min_partial_sell_pct', 'volatility_cooldown_ms'
+    ];
+    
+    directStrategyFields.forEach(field => {
+      if (values[field] !== undefined) {
+        processedValues[field] = parseNumber(values[field]);
+      }
+    });
+
+    // 处理风险管理字段
+    const riskFields = [
+      'hard_stop_loss_pct', 'callback_stop_pct', 'entry_confirmation_secs',
+      'dynamic_hold_max_secs', 'dynamic_hold_trigger_pct', 'dynamic_hold_extend_secs'
+    ];
+    
+    riskFields.forEach(field => {
+      if (values[field] !== undefined) {
+        processedValues[field] = parseNumber(values[field]);
+      }
+    });
 
     // 根据跟单模式清空对应字段
     if (values.follow_mode === 'Percentage') {
@@ -82,11 +173,52 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       processedValues.follow_percentage = null;
     }
 
-    // 移除临时字段
+    // 移除临时字段和不存在的后端字段
     delete processedValues.min_price_usd;
     delete processedValues.max_price_usd;
     delete processedValues.min_follow_amount_sol;
     delete processedValues.max_follow_amount_sol;
+    
+    // 删除后端不存在的字段
+    delete processedValues.take_profit_targets_2_amount;
+    delete processedValues.trailing_stop_callback_pct;
+    delete processedValues.exponential_max_stages;
+
+    // 根据策略类型设置其他策略字段为null
+    if (values.take_profit_strategy === 'standard') {
+      processedValues.trailing_stop_profit_percentage = null;
+      processedValues.exponential_sell_trigger_step_pct = null;
+      processedValues.exponential_sell_base_portion_pct = null;
+      processedValues.exponential_sell_power = null;
+    } else if (values.take_profit_strategy === 'trailing') {
+      processedValues.take_profit_start_pct = null;
+      processedValues.take_profit_step_pct = null;
+      processedValues.take_profit_sell_portion_pct = null;
+      processedValues.exponential_sell_trigger_step_pct = null;
+      processedValues.exponential_sell_base_portion_pct = null;
+      processedValues.exponential_sell_power = null;
+    } else if (values.take_profit_strategy === 'exponential') {
+      processedValues.take_profit_start_pct = null;
+      processedValues.take_profit_step_pct = null;
+      processedValues.take_profit_sell_portion_pct = null;
+      processedValues.trailing_stop_profit_percentage = null;
+    } else if (values.take_profit_strategy === 'volatility') {
+      processedValues.take_profit_start_pct = null;
+      processedValues.take_profit_step_pct = null;
+      processedValues.take_profit_sell_portion_pct = null;
+      processedValues.trailing_stop_profit_percentage = null;
+      processedValues.exponential_sell_trigger_step_pct = null;
+      processedValues.exponential_sell_base_portion_pct = null;
+      processedValues.exponential_sell_power = null;
+    }
+
+    // 设置废弃字段为null
+    processedValues.stop_loss_percentage = null;
+    processedValues.take_profit_percentage_legacy = null;
+    processedValues.dynamic_hold_check_window_secs = null;
+
+    // 调试：打印处理后的数据
+    console.log('🚀 提交到后端的数据:', processedValues);
 
     onSubmit(processedValues);
   };
@@ -165,45 +297,37 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
           <Row gutter={[8, 4]}>
             <Col span={3}>
               <Form.Item name="min_price_usd" label="最低价格筛选 (USD)">
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
-                  placeholder="0.001"
-                  min={0.000001}
-                  step={0.001}
-                  precision={6}
+                  placeholder="0.000001"
+                  type="number"
                 />
               </Form.Item>
             </Col>
             <Col span={3}>
               <Form.Item name="max_price_usd" label="最高价格筛选 (USD)">
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="1.0"
-                  min={0.001}
-                  step={0.1}
-                  precision={3}
+                  type="number"
                 />
               </Form.Item>
             </Col>
             <Col span={3}>
               <Form.Item name="min_follow_amount_sol" label="最小跟单金额 (SOL)">
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
-                  placeholder="0.01"
-                  min={0.001}
-                  step={0.01}
-                  precision={3}
+                  placeholder="0.001"
+                  type="number"
                 />
               </Form.Item>
             </Col>
             <Col span={3}>
               <Form.Item name="max_follow_amount_sol" label="最大跟单金额 (SOL)">
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="1.0"
-                  min={0.01}
-                  step={0.1}
-                  precision={2}
+                  type="number"
                 />
               </Form.Item>
             </Col>
@@ -252,13 +376,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
             </Col>
             <Col span={4}>
               <Form.Item name="accelerator_tip_percentage" label="加速器小费 (%)">
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="1.0"
-                  min={0.1}
-                  max={10}
-                  step={0.1}
-                  precision={1}
+                  type="number"
                 />
               </Form.Item>
             </Col>
@@ -268,13 +389,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 label="滑点容忍度 (%)"
                 rules={[{ required: true, message: '请输入滑点容忍度' }]}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
                   placeholder="5.0"
-                  min={0.1}
-                  max={50}
-                  step={0.1}
-                  precision={1}
+                  type="number"
                 />
               </Form.Item>
             </Col>
@@ -292,8 +410,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={50}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -302,8 +421,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={50}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -312,8 +432,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="10"
-                  min={1}
-                  max={300}
+                  min={0.1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -322,8 +443,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={5}
-                  max={600}
+                  min={0.1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -332,10 +454,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="0.5"
-                  min={0.1}
-                  max={10}
-                  step={0.1}
-                  precision={1}
+                  min={0.01}
+                  step={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -344,8 +466,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="5"
-                  min={1}
-                  max={60}
+                  min={0.1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>

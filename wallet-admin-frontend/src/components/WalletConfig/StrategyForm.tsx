@@ -42,8 +42,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={1000}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -52,8 +53,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="50"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -62,8 +64,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="50"
-                  min={1}
-                  max={1000}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -72,8 +75,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="100"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -88,8 +92,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={1000}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -98,8 +103,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="10"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -114,8 +120,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="50"
-                  min={1}
-                  max={1000}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -124,10 +131,10 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="2.0"
-                  min={1.1}
-                  max={10}
-                  step={0.1}
-                  precision={1}
+                  min={0.01}
+                  step={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -137,7 +144,8 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                   style={{ width: '100%' }}
                   placeholder="5"
                   min={1}
-                  max={10}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -146,8 +154,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -162,8 +171,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={5}
-                  max={100}
+                  min={1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -172,10 +182,10 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="2.0"
-                  min={0.5}
-                  max={5}
-                  step={0.1}
-                  precision={1}
+                  min={0.01}
+                  step={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -184,8 +194,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="14"
-                  min={5}
-                  max={50}
+                  min={1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -194,10 +205,10 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="1.5"
-                  min={0.1}
-                  max={5}
-                  step={0.1}
-                  precision={1}
+                  min={0.01}
+                  step={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -207,8 +218,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="100"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -217,8 +229,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={1}
-                  max={100}
+                  min={0.01}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -227,8 +240,9 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="1000"
-                  min={100}
-                  max={10000}
+                  min={1}
+                  stringMode
+                  controls={false}
                 />
               </Form.Item>
             </Col>

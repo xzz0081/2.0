@@ -206,12 +206,12 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
           <Space direction="vertical" size="small">
             {hasMinPrice && (
               <Typography.Text type="secondary">
-                最低: {formatPrice(priceMultiplierToUsd(record.min_price_multiplier!, solPrice))}
+                最低: ${(record.min_price_multiplier! * solPrice).toFixed(6)}
               </Typography.Text>
             )}
             {hasMaxPrice && (
               <Typography.Text type="secondary">
-                最高: {formatPrice(priceMultiplierToUsd(record.max_price_multiplier!, solPrice))}
+                最高: ${(record.max_price_multiplier! * solPrice).toFixed(3)}
               </Typography.Text>
             )}
           </Space>
