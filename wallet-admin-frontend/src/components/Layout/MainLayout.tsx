@@ -104,7 +104,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // SSE连接
   useEffect(() => {
     console.log('🔌 建立SSE连接...');
-    const eventSource = new EventSource('http://127.0.0.1:8080/api/v1/trades/stream');
+    const eventSource = new EventSource('/api/v1/trades/stream');
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {

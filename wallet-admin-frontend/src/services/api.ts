@@ -14,7 +14,7 @@ import type {
 // 创建axios实例
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
-    baseURL: import.meta.env.DEV ? '' : 'http://127.0.0.1:8080', // 开发环境使用代理，生产环境使用绝对URL
+    baseURL: '', // 始终使用相对路径，通过Nginx代理
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export class ApiService {
 
   static async clearLogs(): Promise<ClearLogsResponse> {
     // 直接调用后端接口清除日志，不传任何参数
-    const response = await axios.post<ClearLogsResponse>('http://127.0.0.1:8080/api/v1/logs/clear');
+    const response = await axios.post<ClearLogsResponse>('/api/v1/logs/clear');
     return response.data;
   }
 

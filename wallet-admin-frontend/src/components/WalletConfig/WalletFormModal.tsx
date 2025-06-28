@@ -355,8 +355,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="150000"
-                  min={1000}
-                  max={1000000}
                 />
               </Form.Item>
             </Col>
@@ -369,8 +367,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="80000"
-                  min={10000}
-                  max={200000}
                 />
               </Form.Item>
             </Col>
@@ -410,7 +406,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={0.01}
                   stringMode
                   controls={false}
                 />
@@ -421,7 +416,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={0.01}
                   stringMode
                   controls={false}
                 />
@@ -432,7 +426,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="10"
-                  min={0.1}
                   stringMode
                   controls={false}
                 />
@@ -443,7 +436,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  min={0.1}
                   stringMode
                   controls={false}
                 />
@@ -454,7 +446,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="0.5"
-                  min={0.01}
                   step={0.01}
                   stringMode
                   controls={false}
@@ -466,7 +457,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="5"
-                  min={0.1}
                   stringMode
                   controls={false}
                 />
