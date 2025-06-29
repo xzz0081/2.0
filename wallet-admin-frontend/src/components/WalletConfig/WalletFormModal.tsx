@@ -1,7 +1,6 @@
 import React from 'react';
 import { Modal, Form, Row, Col, Input, Switch, InputNumber, Typography, Divider } from 'antd';
 import { WalletConfig } from '../../types/api';
-import { useSolPrice } from '../../hooks/useSolPrice';
 import { usdToPriceMultiplier } from '../../utils/priceUtils';
 import FollowModeForm from './FollowModeForm';
 import StrategyForm from './StrategyForm';
@@ -11,6 +10,7 @@ interface WalletFormModalProps {
   visible: boolean;
   mode: 'add' | 'edit';
   editingWallet?: WalletConfig | null;
+  solPrice: number; // 从父组件传入SOL价格，避免重复API请求
   form: any;
   onSubmit: (values: any) => void;
   onCancel: () => void;
@@ -21,26 +21,22 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
   visible,
   mode,
   editingWallet,
+  solPrice, // 从props接收，不再使用Hook和主动刷新
   form,
   onSubmit,
   onCancel,
   loading
 }) => {
-  const { solPrice, refreshPrice } = useSolPrice(false); // 禁用自动刷新，手动按需获取
-
-  // 弹窗打开时获取最新SOL价格
-  React.useEffect(() => {
-    if (visible) {
-      refreshPrice(); // 获取最新价格用于USD转换
-    }
-  }, [visible, refreshPrice]);
+  const title = mode === 'add' ? '添加钱包配置' : '编辑钱包配置';
 
   // 当编辑模式时，设置表单初始值（只在模态框打开时执行一次）
   React.useEffect(() => {
     if (mode === 'edit' && editingWallet && visible) {
+      console.log(`💰 Modal: 使用SOL价格 $${solPrice.toFixed(4)} 进行价格转换`);
+      
       const formValues = {
         ...editingWallet,
-        // 价格转换 - 使用当前SOL价格进行一次性转换
+        // 价格转换 - 使用传入的SOL价格进行转换
         min_price_usd: editingWallet.min_price_multiplier ? 
           (editingWallet.min_price_multiplier * solPrice).toFixed(6) : undefined,
         max_price_usd: editingWallet.max_price_multiplier ? 
@@ -50,14 +46,23 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
         min_follow_amount_sol: editingWallet.sol_amount_min || undefined,
         max_follow_amount_sol: editingWallet.sol_amount_max || undefined,
 
-        // 策略字段名映射（后端字段名 -> 前端字段名）
-        take_profit_targets_1_pct: editingWallet.take_profit_start_pct,
-        take_profit_targets_1_amount: editingWallet.take_profit_step_pct,
-        take_profit_targets_2_pct: editingWallet.take_profit_sell_portion_pct,
-        trailing_stop_activation_pct: editingWallet.trailing_stop_profit_percentage,
-        exponential_base_threshold: editingWallet.exponential_sell_trigger_step_pct,
-        exponential_multiplier: editingWallet.exponential_sell_power,
-        exponential_sell_pct: editingWallet.exponential_sell_base_portion_pct,
+        // 策略字段直接映射（后端字段名 = 前端字段名，无需转换）
+        take_profit_start_pct: editingWallet.take_profit_start_pct,
+        take_profit_step_pct: editingWallet.take_profit_step_pct,
+        take_profit_sell_portion_pct: editingWallet.take_profit_sell_portion_pct,
+        trailing_stop_profit_percentage: editingWallet.trailing_stop_profit_percentage,
+        exponential_sell_trigger_step_pct: editingWallet.exponential_sell_trigger_step_pct,
+        exponential_sell_base_portion_pct: editingWallet.exponential_sell_base_portion_pct,
+        exponential_sell_power: editingWallet.exponential_sell_power,
+        
+        // volatility 策略字段
+        volatility_bb_window_size: editingWallet.volatility_bb_window_size,
+        volatility_bb_stddev: editingWallet.volatility_bb_stddev,
+        volatility_atr_samples: editingWallet.volatility_atr_samples,
+        volatility_atr_multiplier: editingWallet.volatility_atr_multiplier,
+        volatility_sell_percent: editingWallet.volatility_sell_percent,
+        volatility_cooldown_ms: editingWallet.volatility_cooldown_ms,
+        min_partial_sell_pct: editingWallet.min_partial_sell_pct,
         
         // 确保必需字段有默认值
         follow_mode: editingWallet.follow_mode || 'Percentage',
@@ -77,7 +82,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       };
       form.setFieldsValue(formValues);
     }
-  }, [mode, editingWallet, visible, form]); // 移除solPrice依赖，避免价格更新时重复设置表单
+  }, [mode, editingWallet, visible, form, solPrice]); // 添加solPrice到依赖，但不会导致频繁更新
 
   const handleFormSubmit = async (values: any) => {
     // 数据类型转换函数
@@ -117,38 +122,22 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       };
     }
 
-    // 处理止盈策略字段名映射和类型转换
-    const fieldMappings = {
-      // standard 策略字段映射
-      'take_profit_targets_1_pct': 'take_profit_start_pct',
-      'take_profit_targets_1_amount': 'take_profit_step_pct', 
-      'take_profit_targets_2_pct': 'take_profit_sell_portion_pct',
-      
-      // trailing 策略字段映射
-      'trailing_stop_activation_pct': 'trailing_stop_profit_percentage',
-      
-      // exponential 策略字段映射
-      'exponential_base_threshold': 'exponential_sell_trigger_step_pct',
-      'exponential_multiplier': 'exponential_sell_power',
-      'exponential_sell_pct': 'exponential_sell_base_portion_pct',
-    };
-
-    // 应用字段映射
-    Object.entries(fieldMappings).forEach(([frontendField, backendField]) => {
-      if (values[frontendField] !== undefined) {
-        processedValues[backendField] = parseNumber(values[frontendField]);
-        // 删除前端字段名
-        delete processedValues[frontendField];
-      }
-    });
-
-    // 处理不需要映射的策略字段
-    const directStrategyFields = [
+    // 处理所有策略字段（现在前端和后端使用相同字段名）
+    const strategyFields = [
+      // standard 策略字段
+      'take_profit_start_pct', 'take_profit_step_pct', 'take_profit_sell_portion_pct',
+      // trailing 策略字段
+      'trailing_stop_profit_percentage',
+      // exponential 策略字段
+      'exponential_sell_trigger_step_pct', 'exponential_sell_base_portion_pct', 'exponential_sell_power',
+      // volatility 策略字段
       'volatility_bb_window_size', 'volatility_bb_stddev', 'volatility_atr_samples', 'volatility_atr_multiplier',
-      'volatility_sell_percent', 'min_partial_sell_pct', 'volatility_cooldown_ms'
+      'volatility_sell_percent', 'volatility_cooldown_ms',
+      // 通用字段
+      'min_partial_sell_pct'
     ];
     
-    directStrategyFields.forEach(field => {
+    strategyFields.forEach(field => {
       if (values[field] !== undefined) {
         processedValues[field] = parseNumber(values[field]);
       }
@@ -179,10 +168,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
     delete processedValues.min_follow_amount_sol;
     delete processedValues.max_follow_amount_sol;
     
-    // 删除后端不存在的字段
-    delete processedValues.take_profit_targets_2_amount;
-    delete processedValues.trailing_stop_callback_pct;
-    delete processedValues.exponential_max_stages;
+    // 这些字段在新版本中不再使用，已移除
 
     // 根据策略类型设置其他策略字段为null
     if (values.take_profit_strategy === 'standard') {
@@ -190,6 +176,14 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       processedValues.exponential_sell_trigger_step_pct = null;
       processedValues.exponential_sell_base_portion_pct = null;
       processedValues.exponential_sell_power = null;
+      // volatility策略字段
+      processedValues.volatility_bb_window_size = null;
+      processedValues.volatility_bb_stddev = null;
+      processedValues.volatility_atr_samples = null;
+      processedValues.volatility_atr_multiplier = null;
+      processedValues.volatility_sell_percent = null;
+      processedValues.volatility_cooldown_ms = null;
+      processedValues.min_partial_sell_pct = null;
     } else if (values.take_profit_strategy === 'trailing') {
       processedValues.take_profit_start_pct = null;
       processedValues.take_profit_step_pct = null;
@@ -197,11 +191,27 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       processedValues.exponential_sell_trigger_step_pct = null;
       processedValues.exponential_sell_base_portion_pct = null;
       processedValues.exponential_sell_power = null;
+      // volatility策略字段
+      processedValues.volatility_bb_window_size = null;
+      processedValues.volatility_bb_stddev = null;
+      processedValues.volatility_atr_samples = null;
+      processedValues.volatility_atr_multiplier = null;
+      processedValues.volatility_sell_percent = null;
+      processedValues.volatility_cooldown_ms = null;
+      processedValues.min_partial_sell_pct = null;
     } else if (values.take_profit_strategy === 'exponential') {
       processedValues.take_profit_start_pct = null;
       processedValues.take_profit_step_pct = null;
       processedValues.take_profit_sell_portion_pct = null;
       processedValues.trailing_stop_profit_percentage = null;
+      // volatility策略字段
+      processedValues.volatility_bb_window_size = null;
+      processedValues.volatility_bb_stddev = null;
+      processedValues.volatility_atr_samples = null;
+      processedValues.volatility_atr_multiplier = null;
+      processedValues.volatility_sell_percent = null;
+      processedValues.volatility_cooldown_ms = null;
+      processedValues.min_partial_sell_pct = null;
     } else if (values.take_profit_strategy === 'volatility') {
       processedValues.take_profit_start_pct = null;
       processedValues.take_profit_step_pct = null;
@@ -210,6 +220,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       processedValues.exponential_sell_trigger_step_pct = null;
       processedValues.exponential_sell_base_portion_pct = null;
       processedValues.exponential_sell_power = null;
+      // volatility策略的字段保留，不设置为null
     }
 
     // 设置废弃字段为null
@@ -222,8 +233,6 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
 
     onSubmit(processedValues);
   };
-
-  const title = mode === 'add' ? '添加钱包配置' : '编辑钱包配置';
 
   return (
     <Modal

@@ -1,5 +1,6 @@
 // 导出所有类型定义
 export * from './api';
+export * from './template';
 
 // 通用UI类型
 export interface TableColumn {

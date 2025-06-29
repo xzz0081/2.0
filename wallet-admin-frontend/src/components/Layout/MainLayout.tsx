@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { Layout, Menu, Button, Dropdown, Avatar, Typography, Space } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Typography, Space, Tooltip } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -13,6 +13,8 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSolPrice } from '../../hooks/useSolPrice';
+import { useQueryClient } from '@tanstack/react-query';
+import ApiService from '../../services/api';
 import type { TradeRecord, WalletConfig } from '../../types';
 
 const { Header, Sider, Content } = Layout;
@@ -48,9 +50,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   // 获取实时SOL价格
-  const { solPrice } = useSolPrice();
+  const { solPrice, dataSource: priceDataSource, refreshPrice, loading: priceLoading, error: priceError } = useSolPrice();
 
   // 交易记录状态
   const [trades, setTrades] = useState<TradeRecord[]>([]);
@@ -61,6 +64,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const STORAGE_KEY = 'realtime_trades';
   const MAX_ITEMS = 50;
+
+  // 预加载钱包配置数据（优化性能）
+  useEffect(() => {
+    // 延迟2秒后预加载，避免影响初始页面加载
+    const timer = setTimeout(() => {
+      console.log('🔄 预加载钱包配置数据...');
+      queryClient.prefetchQuery({
+        queryKey: ['walletConfigs'],
+        queryFn: ApiService.getWalletConfigurations,
+        staleTime: 5 * 60 * 1000, // 5分钟
+      });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [queryClient]);
 
   // 初始化数据加载
   useEffect(() => {
@@ -298,13 +316,50 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <Space size="large">
               {/* SOL价格显示 */}
               <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
                 color: '#ff4d4f',
                 fontFamily: 'monospace',
-                fontSize: '16px',
+                fontSize: '14px',
                 fontWeight: 'bold',
                 transition: 'all 0.3s ease'
               }}>
-                SOL: ${solPrice.toFixed(2)}
+                <span style={{ fontSize: '16px' }}>
+                  SOL: ${solPrice.toFixed(2)}
+                </span>
+                                 {/* 数据源和刷新按钮 */}
+                 <div style={{ 
+                   display: 'flex', 
+                   flexDirection: 'column', 
+                   alignItems: 'flex-start',
+                   fontSize: '10px',
+                   color: '#999',
+                   lineHeight: '12px'
+                 }}>
+                   <span style={{ marginBottom: '2px' }}>
+                     {priceDataSource} {priceError && '(错误)'}
+                   </span>
+                   <Tooltip title={`点击手动刷新SOL价格 ${priceError ? `(当前错误: ${priceError})` : ''}`}>
+                     <Button 
+                       type="text" 
+                       size="small"
+                       loading={priceLoading}
+                       style={{ 
+                         padding: '0', 
+                         height: '12px', 
+                         fontSize: '10px',
+                         color: priceError ? '#ff4d4f' : '#999'
+                       }}
+                       onClick={() => {
+                         console.log('🔄 手动刷新SOL价格');
+                         refreshPrice();
+                       }}
+                     >
+                       刷新
+                     </Button>
+                   </Tooltip>
+                 </div>
               </div>
 
               {/* 用户信息 */}

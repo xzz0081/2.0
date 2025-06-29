@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Row, Col, Select, InputNumber, Typography } from 'antd';
+import { Form, Row, Col, Select, InputNumber, Typography, Divider } from 'antd';
 
 const { Option } = Select;
 
@@ -31,14 +31,12 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
             </Select>
           </Form.Item>
         </Col>
-        
-
 
         {/* 标准止盈策略 */}
         {strategy === 'standard' && (
           <>
-            <Col span={3}>
-              <Form.Item name="take_profit_targets_1_pct" label="止盈目标1 (%)">
+            <Col span={4}>
+              <Form.Item name="take_profit_start_pct" label="起始止盈阈值 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
@@ -47,31 +45,21 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
-              <Form.Item name="take_profit_targets_1_amount" label="卖出比例1 (%)">
+            <Col span={4}>
+              <Form.Item name="take_profit_step_pct" label="止盈步长 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
-                  placeholder="50"
+                  placeholder="10"
                   stringMode
                   controls={false}
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
-              <Form.Item name="take_profit_targets_2_pct" label="止盈目标2 (%)">
+            <Col span={4}>
+              <Form.Item name="take_profit_sell_portion_pct" label="每次卖出比例 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
-                  placeholder="50"
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={3}>
-              <Form.Item name="take_profit_targets_2_amount" label="卖出比例2 (%)">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="100"
+                  placeholder="25"
                   stringMode
                   controls={false}
                 />
@@ -83,21 +71,11 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
         {/* 动态止盈策略 */}
         {strategy === 'trailing' && (
           <>
-            <Col span={4}>
-              <Form.Item name="trailing_stop_activation_pct" label="激活阈值 (%)">
+            <Col span={6}>
+              <Form.Item name="trailing_stop_profit_percentage" label="追踪止盈触发阈值 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="20"
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="trailing_stop_callback_pct" label="回调阈值 (%)">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="10"
                   stringMode
                   controls={false}
                 />
@@ -109,42 +87,32 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
         {/* 指数止盈策略 */}
         {strategy === 'exponential' && (
           <>
-            <Col span={3}>
-              <Form.Item name="exponential_base_threshold" label="基础阈值 (%)">
+            <Col span={4}>
+              <Form.Item name="exponential_sell_trigger_step_pct" label="触发步长 (%)">
                 <InputNumber
                   style={{ width: '100%' }}
-                  placeholder="50"
+                  placeholder="10"
                   stringMode
                   controls={false}
                 />
               </Form.Item>
             </Col>
-            <Col span={3}>
-              <Form.Item name="exponential_multiplier" label="递增倍数">
+            <Col span={4}>
+              <Form.Item name="exponential_sell_base_portion_pct" label="基础卖出比例 (%)">
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="20"
+                  stringMode
+                  controls={false}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="exponential_sell_power" label="指数幂">
                 <InputNumber
                   style={{ width: '100%' }}
                   placeholder="2.0"
                   step={0.01}
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={3}>
-              <Form.Item name="exponential_max_stages" label="最大阶段数">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="5"
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={3}>
-              <Form.Item name="exponential_sell_pct" label="每阶段卖出 (%)">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="20"
                   stringMode
                   controls={false}
                 />
@@ -153,79 +121,117 @@ const StrategyForm: React.FC<StrategyFormProps> = ({ form }) => {
           </>
         )}
 
-        {/* 布林带策略 */}
+        {/* Volatility Strategy Fields */}
         {strategy === 'volatility' && (
           <>
             <Col span={4}>
-              <Form.Item name="volatility_bb_window_size" label="布林带窗口">
-                <InputNumber
+              <Form.Item
+                label="布林带窗口大小"
+                name="volatility_bb_window_size"
+                rules={[{ required: true, message: '请输入布林带窗口大小' }]}
+              >
+                <InputNumber 
                   style={{ width: '100%' }}
-                  placeholder="20"
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="volatility_bb_stddev" label="标准差倍数">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="2.0"
-                  step={0.01}
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="volatility_atr_samples" label="ATR采样大小">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="14"
-                  stringMode
-                  controls={false}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="volatility_atr_multiplier" label="ATR倍数">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="1.5"
-                  step={0.01}
-                  stringMode
-                  controls={false}
+                  min={100} 
+                  max={10000} 
+                  placeholder="1000" 
                 />
               </Form.Item>
             </Col>
 
             <Col span={4}>
-              <Form.Item name="volatility_sell_percent" label="卖出比例 (%)">
-                <InputNumber
+              <Form.Item
+                label="布林带标准差倍数"
+                name="volatility_bb_stddev"
+                rules={[{ required: true, message: '请输入布林带标准差倍数' }]}
+              >
+                <InputNumber 
                   style={{ width: '100%' }}
-                  placeholder="100"
-                  stringMode
-                  controls={false}
+                  min={0.5} 
+                  max={5} 
+                  step={0.1} 
+                  placeholder="1.8" 
                 />
               </Form.Item>
             </Col>
+
             <Col span={4}>
-              <Form.Item name="min_partial_sell_pct" label="最小卖出保护 (%)">
-                <InputNumber
+              <Form.Item
+                label="ATR样本数"
+                name="volatility_atr_samples"
+                rules={[{ required: true, message: '请输入ATR样本数' }]}
+              >
+                <InputNumber 
                   style={{ width: '100%' }}
-                  placeholder="20"
-                  stringMode
-                  controls={false}
+                  min={10} 
+                  max={1000} 
+                  placeholder="100" 
                 />
               </Form.Item>
             </Col>
+
             <Col span={4}>
-              <Form.Item name="volatility_cooldown_ms" label="冷却时间 (毫秒)">
+              <Form.Item
+                label="ATR突增阈值倍数"
+                name="volatility_atr_multiplier"
+                rules={[{ required: true, message: '请输入ATR突增阈值倍数' }]}
+              >
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  min={0.5} 
+                  max={5} 
+                  step={0.1} 
+                  placeholder="1.3" 
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={4}>
+              <Form.Item
+                label="波动率策略卖出比例"
+                name="volatility_sell_percent"
+                rules={[{ required: true, message: '请输入波动率策略卖出比例' }]}
+              >
                 <InputNumber
                   style={{ width: '100%' }}
-                  placeholder="1000"
-                  stringMode
-                  controls={false}
+                  min={1}
+                  max={100}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value?.replace('%', '') as any}
+                  placeholder="40"
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={4}>
+              <Form.Item
+                label="波动率策略冷却时间"
+                name="volatility_cooldown_ms"
+                rules={[{ required: true, message: '请输入波动率策略冷却时间' }]}
+              >
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  min={0} 
+                  max={10000} 
+                  placeholder="500" 
+                  addonAfter="ms" 
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={4}>
+              <Form.Item
+                label="最小卖出保护比例"
+                name="min_partial_sell_pct"
+                tooltip="当剩余仓位占初始仓位比例低于该值时直接清仓"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0}
+                  max={100}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value?.replace('%', '') as any}
+                  placeholder="30"
                 />
               </Form.Item>
             </Col>

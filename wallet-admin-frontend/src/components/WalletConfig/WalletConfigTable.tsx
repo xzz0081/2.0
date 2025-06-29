@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Table,
   Switch,
@@ -8,47 +8,138 @@ import {
   Button,
   Popconfirm,
   Tooltip,
-  Input
+  Input,
+  Select,
+  Row,
+  Col,
+  Checkbox,
+  Alert,
+  message
 } from 'antd';
 import {
   EditOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  ClearOutlined,
+  SaveOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons';
 import type { WalletConfig } from '../../types/api';
-import { useSolPrice } from '../../hooks/useSolPrice';
 import { useWalletRemarks } from '../../hooks/useWalletRemarks';
 import { formatPrice, priceMultiplierToUsd } from '../../utils/priceUtils';
 
 interface WalletConfigTableProps {
   data: WalletConfig[];
   loading: boolean;
+  solPrice: number;
   onEdit: (wallet: WalletConfig) => void;
   onDelete: (walletAddress: string) => void;
+  onBatchDelete: (walletAddresses: string[]) => void;
+  onBatchStatusToggle: (walletAddresses: string[], isActive: boolean) => void;
+  onSaveAsTemplate?: (wallet: WalletConfig) => void;
   onStatusToggle: (wallet: WalletConfig, checked: boolean) => void;
   updateLoading: boolean;
   deleteLoading: boolean;
 }
 
-const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
+const WalletConfigTable: React.FC<WalletConfigTableProps> = React.memo(({
   data = [],
   loading = false,
+  solPrice,
   onEdit,
   onDelete,
+  onBatchDelete,
+  onBatchStatusToggle,
+  onSaveAsTemplate,
   onStatusToggle,
   updateLoading = false,
   deleteLoading = false
 }) => {
   const [editingRemark, setEditingRemark] = useState<string | null>(null);
   const [remarkInputValue, setRemarkInputValue] = useState<string>('');
-  const { solPrice } = useSolPrice();
-  const { getWalletRemarkOrNull, setWalletRemark } = useWalletRemarks();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [searchText, setSearchText] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [modeFilter, setModeFilter] = useState<string>('all');
+  const { getWalletRemarkOrNull, setWalletRemark, remarks } = useWalletRemarks();
 
   if (!Array.isArray(data)) {
     console.warn('WalletConfigTable: data is not an array:', data);
     return <div>数据格式错误</div>;
   }
 
-  const columns = [
+  // 优化：缓存价格计算结果
+  const priceCalculations = useMemo(() => {
+    const cache: Record<string, { minPrice?: string; maxPrice?: string }> = {};
+    
+    data.forEach(item => {
+      const hasMinPrice = item.min_price_multiplier !== null && item.min_price_multiplier !== undefined;
+      const hasMaxPrice = item.max_price_multiplier !== null && item.max_price_multiplier !== undefined;
+      
+      cache[item.wallet_address] = {
+        minPrice: hasMinPrice ? (item.min_price_multiplier! * solPrice).toFixed(6) : undefined,
+        maxPrice: hasMaxPrice ? (item.max_price_multiplier! * solPrice).toFixed(3) : undefined,
+      };
+    });
+    
+    return cache;
+  }, [data, solPrice]);
+
+  // 优化：使用remarks对象而不是函数来减少依赖
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      // 搜索过滤（钱包地址和备注）
+      const searchLower = searchText.toLowerCase();
+      const remarkText = remarks[item.wallet_address]?.remark || '';
+      const matchesSearch = !searchText || 
+        item.wallet_address.toLowerCase().includes(searchLower) ||
+        remarkText.toLowerCase().includes(searchLower);
+
+      // 状态过滤
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'active' && item.is_active) ||
+        (statusFilter === 'inactive' && !item.is_active);
+
+      // 模式过滤
+      const matchesMode = modeFilter === 'all' ||
+        (modeFilter === 'percentage' && item.follow_mode === 'Percentage') ||
+        (modeFilter === 'fixed' && item.follow_mode === 'FixedAmount');
+
+      return matchesSearch && matchesStatus && matchesMode;
+    });
+  }, [data, searchText, statusFilter, modeFilter, remarks]);
+
+  // 批量删除处理
+  const handleBatchDelete = useCallback(() => {
+    if (selectedRowKeys.length === 0 || deleteLoading) {
+      message.warning('请选择要删除的钱包');
+      return;
+    }
+    onBatchDelete(selectedRowKeys);
+    setSelectedRowKeys([]);
+  }, [selectedRowKeys, deleteLoading, onBatchDelete]);
+
+  // 批量状态切换处理
+  const handleBatchStatusToggle = useCallback((isActive: boolean) => {
+    if (selectedRowKeys.length === 0 || updateLoading) {
+      message.warning('请选择要操作的钱包');
+      return;
+    }
+    onBatchStatusToggle(selectedRowKeys, isActive);
+    setSelectedRowKeys([]);
+  }, [selectedRowKeys, updateLoading, onBatchStatusToggle]);
+
+  // 清空筛选
+  const handleClearFilters = useCallback(() => {
+    setSearchText('');
+    setStatusFilter('all');
+    setModeFilter('all');
+  }, []);
+
+  // 优化：缓存列定义
+  const columns = useMemo(() => [
     {
       title: '钱包地址',
       dataIndex: 'wallet_address',
@@ -74,14 +165,20 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
       key: 'remark',
       width: 120,
       render: (address: string) => {
-        const localRemark = getWalletRemarkOrNull(address);
+        const localRemark = remarks[address]?.remark || null;
         const isEditing = editingRemark === address;
 
         if (isEditing) {
-          const handleSaveRemark = () => {
+          const handleSaveRemark = async () => {
             const newRemark = remarkInputValue.trim();
             if (newRemark) {
-              setWalletRemark(address, newRemark);
+              try {
+                await setWalletRemark(address, newRemark);
+                message.success('备注保存成功');
+              } catch (error) {
+                message.error('备注保存失败');
+                console.error('保存备注失败:', error);
+              }
             }
             setEditingRemark(null);
             setRemarkInputValue('');
@@ -195,23 +292,22 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
       key: 'price_filter',
       width: 150,
       render: (_: any, record: WalletConfig) => {
-        const hasMinPrice = record.min_price_multiplier !== null && record.min_price_multiplier !== undefined;
-        const hasMaxPrice = record.max_price_multiplier !== null && record.max_price_multiplier !== undefined;
-
-        if (!hasMinPrice && !hasMaxPrice) {
+        const prices = priceCalculations[record.wallet_address];
+        
+        if (!prices?.minPrice && !prices?.maxPrice) {
           return <Tag color="default">无限制</Tag>;
         }
 
         return (
           <Space direction="vertical" size="small">
-            {hasMinPrice && (
+            {prices?.minPrice && (
               <Typography.Text type="secondary">
-                最低: ${(record.min_price_multiplier! * solPrice).toFixed(6)}
+                最低: ${prices.minPrice}
               </Typography.Text>
             )}
-            {hasMaxPrice && (
+            {prices?.maxPrice && (
               <Typography.Text type="secondary">
-                最高: ${(record.max_price_multiplier! * solPrice).toFixed(3)}
+                最高: ${prices.maxPrice}
               </Typography.Text>
             )}
           </Space>
@@ -314,7 +410,7 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
     {
       title: '操作',
       key: 'actions',
-      width: 120,
+      width: 160,
       render: (_: any, record: WalletConfig) => (
         <Space>
           <Button
@@ -322,7 +418,17 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
             icon={<EditOutlined />}
             onClick={() => onEdit(record)}
             size="small"
+            title="编辑配置"
           />
+          {onSaveAsTemplate && (
+            <Button
+              type="text"
+              icon={<SaveOutlined />}
+              onClick={() => onSaveAsTemplate(record)}
+              size="small"
+              title="保存为模板"
+            />
+          )}
           <Popconfirm
             title="确认删除"
             description="确定要删除这个钱包配置吗？"
@@ -336,27 +442,148 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = ({
               danger
               size="small"
               loading={deleteLoading}
+              title="删除配置"
             />
           </Popconfirm>
         </Space>
       ),
     },
-  ];
+  ], [
+    onEdit, 
+    onDelete, 
+    onSaveAsTemplate, 
+    onStatusToggle, 
+    updateLoading, 
+    deleteLoading, 
+    remarks,
+    editingRemark,
+    remarkInputValue,
+    setWalletRemark,
+    priceCalculations
+  ]);
+
+  // 行选择配置
+  const rowSelection = useMemo(() => ({
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys as string[]);
+    },
+    onSelect: (record: WalletConfig, selected: boolean, selectedRows: WalletConfig[]) => {
+      console.log('选择行:', record, selected, selectedRows);
+    },
+    onSelectAll: (selected: boolean, selectedRows: WalletConfig[], changeRows: WalletConfig[]) => {
+      console.log('全选:', selected, selectedRows, changeRows);
+    },
+  }), [selectedRowKeys]);
 
   return (
-    <Table
-      columns={columns}
-      dataSource={data}
-      loading={loading}
-      pagination={{
-        pageSize: 10,
-        showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total) => `共 ${total} 个钱包配置`,
-      }}
-      scroll={{ x: 1200 }}
-    />
+    <div>
+      {/* 筛选和批量操作区域 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col span={8}>
+          <Input
+            placeholder="搜索钱包地址或备注"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+        </Col>
+        <Col span={4}>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="状态筛选"
+            value={statusFilter}
+            onChange={setStatusFilter}
+          >
+            <Select.Option value="all">全部状态</Select.Option>
+            <Select.Option value="active">已启用</Select.Option>
+            <Select.Option value="inactive">已停用</Select.Option>
+          </Select>
+        </Col>
+        <Col span={4}>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="模式筛选"
+            value={modeFilter}
+            onChange={setModeFilter}
+          >
+            <Select.Option value="all">全部模式</Select.Option>
+            <Select.Option value="percentage">百分比</Select.Option>
+            <Select.Option value="fixed">固定金额</Select.Option>
+          </Select>
+        </Col>
+        <Col span={8}>
+          <Space>
+            <Button
+              icon={<ClearOutlined />}
+              onClick={handleClearFilters}
+            >
+              清空筛选
+            </Button>
+            {selectedRowKeys.length > 0 && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => handleBatchStatusToggle(true)}
+                  loading={updateLoading}
+                  disabled={updateLoading || selectedRowKeys.length === 0}
+                >
+                  批量启用 ({selectedRowKeys.length})
+                </Button>
+                <Button
+                  icon={<PauseCircleOutlined />}
+                  onClick={() => handleBatchStatusToggle(false)}
+                  loading={updateLoading}
+                  disabled={updateLoading || selectedRowKeys.length === 0}
+                >
+                  批量停用 ({selectedRowKeys.length})
+                </Button>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleBatchDelete}
+                  loading={deleteLoading}
+                  disabled={deleteLoading || selectedRowKeys.length === 0}
+                >
+                  批量删除 ({selectedRowKeys.length})
+                </Button>
+              </>
+            )}
+          </Space>
+        </Col>
+      </Row>
+
+      {/* 筛选结果提示 */}
+      {filteredData.length !== data.length && (
+        <Alert
+          message={`筛选结果: ${filteredData.length} / ${data.length} 个钱包配置`}
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* 表格 */}
+      <Table
+        columns={columns}
+        dataSource={filteredData}
+        loading={loading}
+        rowKey="wallet_address"
+        rowSelection={rowSelection}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 个钱包配置`,
+        }}
+        scroll={{ x: 1200, y: 600 }}
+      />
+    </div>
   );
-};
+});
+
+WalletConfigTable.displayName = 'WalletConfigTable';
 
 export default WalletConfigTable; 
