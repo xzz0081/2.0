@@ -56,11 +56,11 @@ export interface WalletConfig {
   callback_stop_pct?: number | null; // [可选] 回调止损
 
   // --- 动态持仓时间策略 ---
-  entry_confirmation_secs?: number | null; // [可选] 初始持仓时间
+  entry_confirmation_ms?: number | null; // [可选] 初始持仓时间（毫秒）
   dynamic_hold_trigger_pct?: number | null; // [可选] 触发持仓延长的价格波动百分比
   dynamic_hold_check_window_secs?: number | null; // [可选] 检查窗口时间
-  dynamic_hold_extend_secs?: number | null; // [可选] 每次触发后，延长持仓的秒数
-  dynamic_hold_max_secs?: number | null; // [可选] 通过动态延长，一笔交易允许的最长总持仓时间
+  dynamic_hold_extend_ms?: number | null; // [可选] 每次触发后，延长持仓的毫秒数
+  dynamic_hold_max_ms?: number | null; // [可选] 通过动态延长，一笔交易允许的最长总持仓时间（毫秒）
 
   // --- 自动暂停 ---
   auto_suspend_config?: {

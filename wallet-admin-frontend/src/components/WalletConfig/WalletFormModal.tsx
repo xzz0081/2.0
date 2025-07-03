@@ -5,6 +5,7 @@ import { usdToPriceMultiplier } from '../../utils/priceUtils';
 import FollowModeForm from './FollowModeForm';
 import StrategyForm from './StrategyForm';
 import AutoSuspendForm from './AutoSuspendForm';
+import TimeInputWithUnit from './TimeInputWithUnit';
 
 interface WalletFormModalProps {
   visible: boolean;
@@ -153,8 +154,8 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
 
     // 处理风险管理字段
     const riskFields = [
-      'hard_stop_loss_pct', 'callback_stop_pct', 'entry_confirmation_secs',
-      'dynamic_hold_max_secs', 'dynamic_hold_trigger_pct', 'dynamic_hold_extend_secs'
+      'hard_stop_loss_pct', 'callback_stop_pct', 'entry_confirmation_ms',
+      'dynamic_hold_max_ms', 'dynamic_hold_trigger_pct', 'dynamic_hold_extend_ms'
     ];
     
     riskFields.forEach(field => {
@@ -474,22 +475,18 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               </Form.Item>
             </Col>
             <Col span={4}>
-              <Form.Item name="entry_confirmation_secs" label="初始持仓时间 (秒)">
-                <InputNumber
+              <Form.Item name="entry_confirmation_ms" label="初始持仓时间">
+                <TimeInputWithUnit
                   style={{ width: '100%' }}
-                  placeholder="10"
-                  stringMode
-                  controls={false}
+                  placeholder="10000"
                 />
               </Form.Item>
             </Col>
             <Col span={4}>
-              <Form.Item name="dynamic_hold_max_secs" label="最大持仓时间 (秒)">
-                <InputNumber
+              <Form.Item name="dynamic_hold_max_ms" label="最大持仓时间">
+                <TimeInputWithUnit
                   style={{ width: '100%' }}
-                  placeholder="20"
-                  stringMode
-                  controls={false}
+                  placeholder="20000"
                 />
               </Form.Item>
             </Col>
@@ -505,12 +502,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               </Form.Item>
             </Col>
             <Col span={4}>
-              <Form.Item name="dynamic_hold_extend_secs" label="延长时间 (秒)">
-                <InputNumber
+              <Form.Item name="dynamic_hold_extend_ms" label="延长时间">
+                <TimeInputWithUnit
                   style={{ width: '100%' }}
-                  placeholder="5"
-                  stringMode
-                  controls={false}
+                  placeholder="5000"
                 />
               </Form.Item>
             </Col>
