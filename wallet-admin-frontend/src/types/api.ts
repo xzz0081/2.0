@@ -74,6 +74,12 @@ export interface WalletConfig {
   stop_loss_percentage?: number | null; // (已废弃)
   take_profit_percentage_legacy?: number | null; // (已废弃)
   tip_config?: any | null; // (兼容旧版本)
+
+  // --- 卖出专属参数 ---
+  sell_slippage_percentage?: number | null; // [可选] 卖出滑点容忍度
+  sell_priority_fee?: number | null; // [可选] 卖出优先费用 μlamports
+  sell_tip_percentage?: number | null; // [可选] 卖出Tip百分比
+  sell_compute_unit_limit?: number | null; // [可选] 卖出计算单元限制
 }
 
 // 钱包配置响应类型

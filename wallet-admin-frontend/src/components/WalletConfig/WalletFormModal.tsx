@@ -64,6 +64,11 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
         volatility_cooldown_ms: editingWallet.volatility_cooldown_ms,
         min_partial_sell_pct: editingWallet.min_partial_sell_pct,
         
+        // 卖出专属参数映射
+        sell_slippage_percentage: editingWallet.sell_slippage_percentage,
+        sell_priority_fee: editingWallet.sell_priority_fee,
+        sell_tip_percentage: editingWallet.sell_tip_percentage,
+        
         // 确保必需字段有默认值
         follow_mode: editingWallet.follow_mode || 'Percentage',
         slippage_percentage: editingWallet.slippage_percentage ?? 5.0,
@@ -78,7 +83,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
           window_size: 1,
           loss_count: 1,
           loss_threshold: -5.0
-        }
+        },
       };
       form.setFieldsValue(formValues);
     }
@@ -110,6 +115,9 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
       accelerator_tip_percentage: parseNumber(values.accelerator_tip_percentage),
       follow_percentage: parseNumber(values.follow_percentage),
       fixed_follow_amount_sol: parseNumber(values.fixed_follow_amount_sol),
+      sell_slippage_percentage: parseNumber(values.sell_slippage_percentage),
+      sell_priority_fee: parseNumber(values.sell_priority_fee),
+      sell_tip_percentage: parseNumber(values.sell_tip_percentage),
     };
 
     // 处理自动暂停配置
@@ -263,7 +271,10 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               window_size: 1,
               loss_count: 1,
               loss_threshold: -5.0
-            }
+            },
+            sell_slippage_percentage: 5.0,
+            sell_priority_fee: 150000,
+            sell_tip_percentage: 1.0,
           }}
         >
           {/* 基础配置 */}
@@ -354,12 +365,17 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
           <Typography.Title level={5} style={{ margin: '0 0 8px 0', color: '#fa8c16' }}>
             ⚙️ 交易执行参数
           </Typography.Title>
-          <Row gutter={[8, 4]}>
+
+          {/* 买入参数 */}
+          <Typography.Text strong style={{ color: '#52c41a', fontSize: '14px' }}>
+            📈 买入参数
+          </Typography.Text>
+          <Row gutter={[8, 4]} style={{ marginTop: 4 }}>
             <Col span={4}>
               <Form.Item
                 name="priority_fee"
                 label="优先费用 (lamports)"
-                rules={[{ required: true, message: '请输入优先费用' }]}
+                rules={[{ required: true, message: '请输入买入优先费用' }]}
               >
                 <InputNumber
                   style={{ width: '100%' }}
@@ -371,7 +387,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               <Form.Item
                 name="compute_unit_limit"
                 label="计算单元限制"
-                rules={[{ required: true, message: '请输入计算单元限制' }]}
+                rules={[{ required: true, message: '请输入买入计算单元限制' }]}
               >
                 <InputNumber
                   style={{ width: '100%' }}
@@ -380,7 +396,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               </Form.Item>
             </Col>
             <Col span={4}>
-              <Form.Item name="accelerator_tip_percentage" label="加速器小费 (%)">
+              <Form.Item name="accelerator_tip_percentage" label="tip (%)">
                 <Input
                   style={{ width: '100%' }}
                   placeholder="1.0"
@@ -392,7 +408,7 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
               <Form.Item
                 name="slippage_percentage"
                 label="滑点容忍度 (%)"
-                rules={[{ required: true, message: '请输入滑点容忍度' }]}
+                rules={[{ required: true, message: '请输入买入滑点容忍度' }]}
               >
                 <Input
                   style={{ width: '100%' }}
@@ -403,6 +419,33 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
             </Col>
           </Row>
 
+          {/* 卖出参数 */}
+          <Typography.Text strong style={{ color: '#ff4d4f', fontSize: '14px', marginTop: '12px', display: 'block' }}>
+            📉 卖出参数
+          </Typography.Text>
+          <Row gutter={[8, 4]} style={{ marginTop: 4 }}>
+            <Col span={4}>
+              <Form.Item name="sell_priority_fee" label="优先费用 (lamports)">
+                <InputNumber style={{ width: '100%' }} placeholder="150000" />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="sell_compute_unit_limit" label="计算单元限制">
+                <InputNumber style={{ width: '100%' }} placeholder="80000" />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="sell_tip_percentage" label="tip (%)">
+                <Input style={{ width: '100%' }} placeholder="1.0" type="number" />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="sell_slippage_percentage" label="滑点容忍度 (%)">
+                <Input style={{ width: '100%' }} placeholder="5.0" type="number" />
+              </Form.Item>
+            </Col>
+          </Row>
+          
           <Divider style={{ margin: '8px 0' }} />
 
           {/* 风险管理 */}
