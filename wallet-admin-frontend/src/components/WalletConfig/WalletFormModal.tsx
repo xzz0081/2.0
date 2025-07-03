@@ -69,6 +69,11 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
         sell_slippage_percentage: editingWallet.sell_slippage_percentage,
         sell_priority_fee: editingWallet.sell_priority_fee,
         sell_tip_percentage: editingWallet.sell_tip_percentage,
+        sell_compute_unit_limit: editingWallet.sell_compute_unit_limit,
+
+        // 卖出重试配置映射
+        sell_retry_max_attempts: editingWallet.sell_retry_max_attempts,
+        sell_retry_slippage_increment: editingWallet.sell_retry_slippage_increment,
         
         // 确保必需字段有默认值
         follow_mode: editingWallet.follow_mode || 'Percentage',
@@ -276,6 +281,8 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
             sell_slippage_percentage: 5.0,
             sell_priority_fee: 150000,
             sell_tip_percentage: 1.0,
+            sell_retry_max_attempts: 5,
+            sell_retry_slippage_increment: 2.0,
           }}
         >
           {/* 基础配置 */}
@@ -443,6 +450,44 @@ const WalletFormModal: React.FC<WalletFormModalProps> = ({
             <Col span={4}>
               <Form.Item name="sell_slippage_percentage" label="滑点容忍度 (%)">
                 <Input style={{ width: '100%' }} placeholder="5.0" type="number" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 卖出重试配置 */}
+          <Typography.Text strong style={{ color: '#ff7a45', fontSize: '13px', marginTop: '8px', display: 'block' }}>
+            🔄 重试配置
+          </Typography.Text>
+          <Row gutter={[8, 4]} style={{ marginTop: 4 }}>
+            <Col span={4}>
+              <Form.Item
+                name="sell_retry_max_attempts"
+                label="最大重试次数"
+                tooltip="卖出失败时的最大重试次数，0表示不重试"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="5"
+                  min={0}
+                  max={20}
+                  precision={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item
+                name="sell_retry_slippage_increment"
+                label="滑点递增 (%)"
+                tooltip="每次重试增加的滑点百分比，无最大限制"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="2.0"
+                  min={0.1}
+                  max={50.0}
+                  step={0.1}
+                  precision={1}
+                />
               </Form.Item>
             </Col>
           </Row>

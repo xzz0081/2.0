@@ -80,6 +80,10 @@ export interface WalletConfig {
   sell_priority_fee?: number | null; // [可选] 卖出优先费用 μlamports
   sell_tip_percentage?: number | null; // [可选] 卖出Tip百分比
   sell_compute_unit_limit?: number | null; // [可选] 卖出计算单元限制
+
+  // --- 卖出重试配置 ---
+  sell_retry_max_attempts?: number | null; // [可选] 卖出失败时的最大重试次数，默认5次
+  sell_retry_slippage_increment?: number | null; // [可选] 每次重试增加的滑点百分比，默认2.0%
 }
 
 // 钱包配置响应类型
