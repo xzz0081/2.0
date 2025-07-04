@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   UserOutlined,
   LineChartOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -272,11 +273,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            fontSize: collapsed ? '16px' : '18px',
+            fontSize: collapsed ? '12px' : '16px',
             fontWeight: 'bold',
-            borderBottom: '1px solid #1f1f1f'
+            borderBottom: '1px solid #1f1f1f',
+            padding: '0 8px',
+            textAlign: 'center',
+            lineHeight: collapsed ? '14px' : '18px'
           }}>
-            {collapsed ? '钱包' : '钱包管理系统'}
+            {collapsed ? '磐石钱包' : '磐石钱包管理系统'}
           </div>
 
           {/* 导航菜单 */}
@@ -312,7 +316,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               }}
             />
 
-            {/* 右侧：SOL价格和用户信息区域 */}
+            {/* 右侧：SOL价格、技术支持和用户信息区域 */}
             <Space size="large">
               {/* SOL价格显示 */}
               <div style={{
@@ -329,9 +333,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   SOL: ${solPrice.toFixed(2)}
                 </span>
                                  {/* 数据源和刷新按钮 */}
-                 <div style={{ 
-                   display: 'flex', 
-                   flexDirection: 'column', 
+                 <div style={{
+                   display: 'flex',
+                   flexDirection: 'column',
                    alignItems: 'flex-start',
                    fontSize: '10px',
                    color: '#999',
@@ -341,13 +345,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                      {priceDataSource} {priceError && '(错误)'}
                    </span>
                    <Tooltip title={`点击手动刷新SOL价格 ${priceError ? `(当前错误: ${priceError})` : ''}`}>
-                     <Button 
-                       type="text" 
+                     <Button
+                       type="text"
                        size="small"
                        loading={priceLoading}
-                       style={{ 
-                         padding: '0', 
-                         height: '12px', 
+                       style={{
+                         padding: '0',
+                         height: '12px',
                          fontSize: '10px',
                          color: priceError ? '#ff4d4f' : '#999'
                        }}
@@ -361,6 +365,35 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                    </Tooltip>
                  </div>
               </div>
+
+              {/* 磐石社区技术支持 */}
+              <Tooltip title="磐石社区" placement="bottom">
+                <Button
+                  type="text"
+                  icon={<CustomerServiceOutlined />}
+                  style={{
+                    color: '#1890ff',
+                    fontSize: '14px',
+                    height: '32px',
+                    padding: '0 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    background: '#f9f9f9'
+                  }}
+                  onClick={() => window.open('https://t.me/panshishequ1', '_blank')}
+                >
+                  <span style={{
+                    marginLeft: '4px',
+                    fontSize: '12px',
+                    color: '#666'
+                  }}>
+                    技术支持
+                  </span>
+                </Button>
+              </Tooltip>
 
               {/* 用户信息 */}
               <Space>
