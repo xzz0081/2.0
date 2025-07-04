@@ -13,7 +13,6 @@ import {
   ReloadOutlined,
   WalletOutlined,
   ImportOutlined,
-  SaveOutlined,
   SettingOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,7 +30,6 @@ import { useWalletRemarks } from '../hooks/useWalletRemarks';
 import { WalletTemplate, BatchImportWallet, BatchImportProgress } from '../types/template';
 
 const { Title } = Typography;
-const { TextArea } = Input;
 
 // 钱包配置管理页面
 const WalletConfigPage: React.FC = React.memo(() => {
@@ -51,7 +49,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
   const solPrice = ApiService.getCachedSolPrice();
 
   // 本地钱包备注管理
-  const { getWalletRemarkOrNull, setWalletRemark, loadRemarks, updateServerRemarks } = useWalletRemarks();
+  const { setWalletRemark, loadRemarks, updateServerRemarks } = useWalletRemarks();
 
   // 模板管理
   const { createTemplateFromConfig } = useWalletTemplates();
@@ -82,7 +80,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
   // 更新钱包配置
   const updateMutation = useMutation({
     mutationFn: ApiService.updateWalletConfiguration,
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // 判断是否是新增操作（没有editingWallet表示是新增）
       const isAddOperation = !editingWallet;
 
@@ -134,7 +132,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
       
       return results;
     },
-    onMutate: async (walletAddresses) => {
+    onMutate: async (walletAddresses: string[]) => {
       // 乐观更新：立即从UI中移除
       await queryClient.cancelQueries({ queryKey: ['walletConfigs'] });
       
@@ -151,7 +149,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
       
       return { previousData };
     },
-    onSuccess: (results, walletAddresses) => {
+    onSuccess: (results) => {
       const successCount = results.filter(r => r.status === 'fulfilled').length;
       const failedCount = results.filter(r => r.status === 'rejected').length;
       
@@ -166,7 +164,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
         queryClient.invalidateQueries({ queryKey: ['walletConfigs'] });
       }, 300);
     },
-    onError: (error, variables, context) => {
+    onError: (error, _, context) => {
       // 回滚乐观更新
       if (context?.previousData) {
         queryClient.setQueryData(['walletConfigs'], context.previousData);
@@ -225,7 +223,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
       
       return { previousData };
     },
-    onSuccess: (results, { walletAddresses, isActive }) => {
+    onSuccess: (results, { isActive }) => {
       const successCount = results.filter(r => r.status === 'fulfilled').length;
       const failedCount = results.filter(r => r.status === 'rejected').length;
       
@@ -242,7 +240,7 @@ const WalletConfigPage: React.FC = React.memo(() => {
         queryClient.invalidateQueries({ queryKey: ['walletConfigs'] });
       }, 300);
     },
-    onError: (error, variables, context) => {
+    onError: (error, _, context) => {
       // 回滚乐观更新
       if (context?.previousData) {
         queryClient.setQueryData(['walletConfigs'], context.previousData);

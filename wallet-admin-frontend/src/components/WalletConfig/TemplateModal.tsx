@@ -4,7 +4,6 @@ import {
   Table,
   Button,
   Space,
-  Typography,
   Popconfirm,
   message,
   Tag,
@@ -15,7 +14,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  PlusOutlined
 } from '@ant-design/icons';
 import { WalletTemplate } from '../../types/template';
 import { useWalletTemplates } from '../../hooks/useWalletTemplates';
@@ -229,7 +227,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
       <TemplateFormModal
         visible={editModalVisible}
         mode="edit"
-        template={editingTemplate}
+        template={editingTemplate || undefined}
         onCancel={() => {
           setEditModalVisible(false);
           setEditingTemplate(null);

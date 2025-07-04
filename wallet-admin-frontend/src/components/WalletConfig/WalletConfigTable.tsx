@@ -12,7 +12,6 @@ import {
   Select,
   Row,
   Col,
-  Checkbox,
   Alert,
   message
 } from 'antd';
@@ -20,7 +19,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
-  FilterOutlined,
   ClearOutlined,
   SaveOutlined,
   PlayCircleOutlined,
@@ -28,7 +26,6 @@ import {
 } from '@ant-design/icons';
 import type { WalletConfig } from '../../types/api';
 import { useWalletRemarks } from '../../hooks/useWalletRemarks';
-import { formatPrice, priceMultiplierToUsd } from '../../utils/priceUtils';
 
 interface WalletConfigTableProps {
   data: WalletConfig[];
@@ -63,7 +60,7 @@ const WalletConfigTable: React.FC<WalletConfigTableProps> = React.memo(({
   const [searchText, setSearchText] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modeFilter, setModeFilter] = useState<string>('all');
-  const { getWalletRemarkOrNull, setWalletRemark, remarks } = useWalletRemarks();
+  const { setWalletRemark, remarks } = useWalletRemarks();
 
   if (!Array.isArray(data)) {
     console.warn('WalletConfigTable: data is not an array:', data);

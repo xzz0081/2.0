@@ -127,7 +127,6 @@ const BatchImportModalContent: React.FC<BatchImportModalProps> = ({
       setSelectedTemplateId('');
       setWalletListText('');
       setProgress(null);
-      setErrors([]);
     } catch (error) {
       console.error('Reset error:', error);
     }

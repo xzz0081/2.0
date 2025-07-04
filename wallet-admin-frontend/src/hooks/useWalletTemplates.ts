@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { WalletTemplate } from '../types/template';
 import { WalletConfig } from '../types/api';
 
