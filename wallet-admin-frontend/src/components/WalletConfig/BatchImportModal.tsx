@@ -8,7 +8,6 @@ import {
   Typography,
   Progress,
   Alert,
-  Form,
   Row,
   Col,
   message,
@@ -16,12 +15,9 @@ import {
   Spin
 } from 'antd';
 import {
-  UploadOutlined,
-  DeleteOutlined,
   PlayCircleOutlined
 } from '@ant-design/icons';
 import { WalletTemplate, BatchImportProgress, BatchImportWallet } from '../../types/template';
-import { WalletConfig } from '../../types/api';
 import { useWalletTemplates } from '../../hooks/useWalletTemplates';
 
 const { TextArea } = Input;
@@ -78,7 +74,6 @@ const BatchImportModalContent: React.FC<BatchImportModalProps> = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [walletListText, setWalletListText] = useState('');
   const [progress, setProgress] = useState<BatchImportProgress | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
 
   // 使用useMemo来缓存解析结果，避免在渲染期间调用setErrors
   const parseResult = useMemo(() => {

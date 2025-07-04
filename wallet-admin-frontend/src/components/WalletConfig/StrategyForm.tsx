@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Row, Col, Select, InputNumber, Typography, Divider } from 'antd';
+import { Form, Row, Col, Select, InputNumber, Typography } from 'antd';
 
 const { Option } = Select;
 
